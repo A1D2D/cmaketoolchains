@@ -9,15 +9,198 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "cmaketoolchains.helloWorld",
-        "title": "Hello World"
+        "command": "cmaketoolchains.selectProfile",
+        "title": "Select Profile",
+        "category": "CMake Toolchains"
+      },
+      {
+        "command": "cmaketoolchains.selectTarget",
+        "title": "Select Target",
+        "category": "CMake Toolchains"
+      },
+      {
+        "command": "cmaketoolchains.runTarget",
+        "title": "Run Selected Target",
+        "category": "CMake Toolchains",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cmaketoolchains.buildTarget",
+        "title": "Build Selected Target",
+        "category": "CMake Toolchains",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "cmaketoolchains.configureSettings",
+        "title": "Configure Settings",
+        "category": "CMake Toolchains",
+        "icon": "$(wrench)"
+      },
+      {
+        "command": "cmaketoolchains.syncCMake",
+        "title": "Reload/Sync CMakeCache",
+        "category": "CMake Toolchains",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cmaketoolchains.configureToolchains",
+        "title": "Configure Toolchains",
+        "category": "CMake Toolchains"
+      },
+      {
+        "command": "cmaketoolchains.configureProfiles",
+        "title": "Configure Profiles",
+        "category": "CMake Toolchains"
+      },
+      {
+        "command": "cmaketoolchains.configureTargets",
+        "title": "Configure Targets",
+        "category": "CMake Toolchains"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "cmaketoolchains.selectProfile",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cmaketoolchains.selectTarget",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cmaketoolchains.runTarget",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cmaketoolchains.buildTarget",
+          "group": "navigation@4"
+        },
+        {
+          "command": "cmaketoolchains.configureSettings",
+          "group": "navigation@5"
+        },
+        {
+          "command": "cmaketoolchains.syncCMake",
+          "group": "navigation@6"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Cmake Build Configurator",
+      "properties": {
+        "cmaketoolchains.cmakeSelectedProfile": {
+          "type": "string",
+          "default": "",
+          "description": "selected cmake profile."
+        },
+        "cmaketoolchains.cmakeSelectedTarget": {
+          "type": "string",
+          "default": "",
+          "description": "selected cmake target."
+        },
+        
+        "cmaketoolchains.cmakeToolchains": {
+          "type": "array",
+          "description": "List of CMake Toolchains.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the toolchain."
+              },
+              "toolsetFolder": {
+                "type": "string",
+                "description": "Toolset folder path."
+              },
+              "cmake": {
+                "type": "string",
+                "description": "CMake executable path."
+              },
+              "buildTool": {
+                "type": "string",
+                "description": "Build tool executable path."
+              },
+              "ccompiler": {
+                "type": "string",
+                "description": "C Compiler executable path."
+              },
+              "cxxcompiler": {
+                "type": "string",
+                "description": "C++ Compiler executable path."
+              },
+              "debugger": {
+                "type": "string",
+                "description": "Debugger executable path."
+              }
+            }
+          }
+        },
+        "cmaketoolchains.cmakeProfiles": {
+          "type": "array",
+          "description": "List of CMake profiles.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Profile name (e.g., Debug)."
+              },
+              "buildType": {
+                "type": "string",
+                "description": "CMAKE_BUILD_TYPE value."
+              },
+              "toolchain": {
+                "type": "string",
+                "description": "Toolchain name to use."
+              },
+              "generator": {
+                "type": "string",
+                "description": "CMake generator (e.g. Ninja, Unix Makefiles)."
+              },
+              "cmakeOptions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Extra CMake command line options."
+              },
+              "cacheVariables": {
+                "type": "object",
+                "description": "CMake cache variables to define.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "buildDirectory": {
+                "type": "string",
+                "description": "Build output directory path."
+              },
+              "buildOptions": {
+                "type": "string",
+                "description": "Flags for the build step (e.g. -j 14)."
+              },
+              "environment": {
+                "type": "object",
+                "description": "Additional environment variables for the build.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "cmaketoolchains.cmakeTargets": {}
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -34,16 +217,16 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.102.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/node": "^24.0.15",
+    "@types/vscode": "^1.102.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
-    "eslint": "^9.25.1",
-    "esbuild": "^0.25.3",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.8.3",
     "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.25.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.8.3"
   }
 }
