@@ -14,7 +14,7 @@ export function registerBuildTargetCommand(context: vscode.ExtensionContext) {
       const projectPath = workspaceFolders[0].uri.fsPath;
       const selectedTargetName: string = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedTarget') || '';
 
-      runCMakeTargetBuild(projectPath, activeBuildDir ? path.join(projectPath, activeBuildDir) : '', selectedTargetName);
+      await runCMakeTargetBuild(projectPath, activeBuildDir ? path.join(projectPath, activeBuildDir) : '', selectedTargetName);
       vscode.window.showInformationMessage('target Build: in progress');
    });
    context.subscriptions.push(cmd);

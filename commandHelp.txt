@@ -1,7 +1,8 @@
 //selectProfile
 //selectTarget
-//runTarget
 //buildTarget
+//runTarget
+//debugTarget
 //configureSettings
 //syncCMake
 

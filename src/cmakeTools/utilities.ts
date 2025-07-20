@@ -172,8 +172,10 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 		child.on('close', (code: number | null) => {
 			if (code !== 0) {
 				output.appendLine(`[Error] CMake exited with code ${code}`);
+				resolve(false);
 			} else {
 				output.appendLine('[Info] CMake finished successfully.');
+				resolve(true);
 			}
 		});
 	});
@@ -228,16 +230,16 @@ async function parseCMakeFileApiReply(buildDir: string) {
 	let json: any = JSON.parse(raw);
 
 	let fileName: string = json?.reply?.["codemodel-v2"]?.jsonFile;
-	if(!fileName) {
+	if (!fileName) {
 		return;
 	}
 	file = path.join(replyDir, fileName);
-	raw = fs.readFileSync(file, 'utf8'); 
+	raw = fs.readFileSync(file, 'utf8');
 
 	json = JSON.parse(raw);
 
 	const configurations = json?.configurations;
-	if(!configurations) {
+	if (!configurations) {
 		return;
 	}
 
@@ -251,16 +253,16 @@ async function parseCMakeFileApiReply(buildDir: string) {
 		}
 	}
 	let buildTargets: BuildTargets[] = [];
-	for(const target of targets) {
+	for (const target of targets) {
 		console.log(`target: ${target?.name} ,file: ${target.jsonFile}`);
 		fileName = target?.jsonFile;
 
-		if(!fileName) {
+		if (!fileName) {
 			return;
 		}
 		file = path.join(replyDir, fileName);
-		raw = fs.readFileSync(file, 'utf8'); 
-		
+		raw = fs.readFileSync(file, 'utf8');
+
 		json = JSON.parse(raw);
 
 		const artifactPaths: string[] = json.artifacts?.map((a: any) => a.path) ?? [];

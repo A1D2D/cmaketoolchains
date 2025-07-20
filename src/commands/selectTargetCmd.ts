@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { getAvaliableTargets } from '../globals';
 
-let targets: any[] = [];
 let targetStatusBar: vscode.StatusBarItem;
 
 export function registerSelectTargetCommand(context: vscode.ExtensionContext) {

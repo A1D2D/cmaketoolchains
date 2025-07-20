@@ -26,22 +26,28 @@
         "category": "CMake Toolchains"
       },
       {
-        "command": "cmaketoolchains.runTarget",
-        "title": "Run Selected Target",
-        "category": "CMake Toolchains",
-        "icon": "$(play)"
-      },
-      {
         "command": "cmaketoolchains.buildTarget",
         "title": "Build Selected Target",
         "category": "CMake Toolchains",
-        "icon": "$(tools)"
+        "icon": "$(symbol-constructor)"
+      },
+      {
+        "command": "cmaketoolchains.runTarget",
+        "title": "Run Selected Target",
+        "category": "CMake Toolchains",
+        "icon": "$(run)"
+      },
+      {
+        "command": "cmaketoolchains.debugTarget",
+        "title": "Debug Selected Target",
+        "category": "CMake Toolchains",
+        "icon": "$(bug)"
       },
       {
         "command": "cmaketoolchains.configureSettings",
         "title": "Configure Settings",
         "category": "CMake Toolchains",
-        "icon": "$(wrench)"
+        "icon": "$(gear)"
       },
       {
         "command": "cmaketoolchains.syncCMake",
@@ -76,20 +82,24 @@
           "group": "navigation@2"
         },
         {
-          "command": "cmaketoolchains.runTarget",
+          "command": "cmaketoolchains.buildTarget",
           "group": "navigation@3"
         },
         {
-          "command": "cmaketoolchains.buildTarget",
+          "command": "cmaketoolchains.runTarget",
           "group": "navigation@4"
         },
         {
-          "command": "cmaketoolchains.configureSettings",
+          "command": "cmaketoolchains.debugTarget",
           "group": "navigation@5"
         },
         {
-          "command": "cmaketoolchains.syncCMake",
+          "command": "cmaketoolchains.configureSettings",
           "group": "navigation@6"
+        },
+        {
+          "command": "cmaketoolchains.syncCMake",
+          "group": "navigation@7"
         }
       ]
     },

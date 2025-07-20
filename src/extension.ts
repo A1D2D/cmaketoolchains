@@ -9,7 +9,8 @@ import {
 	registerSyncCMakeCommand,
 	registerConfigureToolchainsCommand,
 	registerConfigureProfilesCommand,
-	registerConfigureTargetsCommand
+	registerConfigureTargetsCommand, 
+	registerDebugTargetCommand
 } from './commands';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -17,8 +18,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	registerSelectProfileCommand(context);
 	registerSelectTargetCommand(context);
-	registerRunTargetCommand(context);
 	registerBuildTargetCommand(context);
+	registerRunTargetCommand(context);
+	registerDebugTargetCommand(context);
 	registerConfigureSettingsCommand(context);
 	registerSyncCMakeCommand(context);
 	registerConfigureToolchainsCommand(context);
