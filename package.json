@@ -10,6 +10,7 @@
     "Other"
   ],
   "activationEvents": [
+    "onDebugResolve:cmake-toolchains",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
@@ -206,7 +207,55 @@
         },
         "cmaketoolchains.cmakeTargets": {}
       }
-    }
+    },
+    "debuggers": [
+      {
+        "type": "cmake-toolchains",
+        "label": "Mock Debug",
+        "program": "./out/debugAdapter.js",
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "target": {
+                "type": "string",
+                "description": "target.",
+                "default": "target def"
+              },
+              "executeable": {
+                "type": "string",
+                "description": "executeable.",
+                "default": "executeable def"
+              },
+              "programArgs": {
+                "type": "string",
+                "description": "programArgs",
+                "default": "programArgs def"
+              },
+              "workDir": {
+                "type": "string",
+                "description": "workDir",
+                "default": "workDir def"
+              },
+              "envVars": {
+                "type": "string",
+                "description": "envVars",
+                "default": "envVars def"
+              },
+              "runAdmin": {
+                "type": "boolean",
+                "description": "runAdmin",
+                "default": false
+              },
+              "runExternal": {
+                "type": "boolean",
+                "description": "runExternal",
+                "default": false
+              }
+            }
+          }
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
