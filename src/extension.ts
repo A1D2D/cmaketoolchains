@@ -12,9 +12,12 @@ import {
 	registerConfigureTargetsCommand, 
 	registerDebugTargetCommand
 } from './commands';
+import { initProjectFolder } from './globals';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "cmaketoolchains" is now active!');
+
+	initProjectFolder();
 
 	registerSelectProfileCommand(context);
 	registerSelectTargetCommand(context);

@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExecOptions } from 'child_process';
 
-import { toolchains, profiles, activeBuildDir, setToolchains, setProfiles, setActiveBuildDir, BuildTargets, setAvaliableTargets } from '../globals';
+import { toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath } from '../globals';
 
 export function runCMakeSyncCommand(projectPath: string) {
 	const config = vscode.workspace.getConfiguration('cmaketoolchains');
@@ -28,27 +28,56 @@ export function runCMakeSyncCommand(projectPath: string) {
 	output.show(true);
 	output.appendLine(`[CMake] Configuring in ${projectPath}...`);
 
+	let buildDir: string | null = extractBuildPath(profile.cmakeOptions);
+
+	if(!buildDir) {
+		buildDir = profile.buildDirectory ? profile.buildDirectory : (profile.buildType ? `build-${profile.buildType.toLowerCase()}` : 'build');
+	}
+
+	setBuildPath(resolvePath(buildDir));
 
 	const cmakeExecutable = toolchain.cmake || 'cmake';
+
 	const buildType = profile.buildType ? `-DCMAKE_BUILD_TYPE=${profile.buildType}` : '';
 	const buildTool = toolchain.buildTool ? `-DCMAKE_MAKE_PROGRAM=${toolchain.buildTool}` : '';
 	const cCompiler = toolchain.ccompiler ? `-DCMAKE_C_COMPILER=${toolchain.ccompiler}` : '';
 	const cppCompiler = toolchain.cppcompiler ? `-DCMAKE_CXX_COMPILER=${toolchain.cppcompiler}` : '';
-	const buildDir = profile.buildDirectory || profile.buildType ? `build-${profile.buildType.toLowerCase()}` : 'build';
-
-	setActiveBuildDir(path.join(buildDir));
-
+	
 	const buildToolType = toolchain.buildTool ? detectGeneratorFromBuildTool(toolchain.buildTool) : '';
-	const optionalBuildTypeFlag = buildToolType ? `-G ${buildToolType}` : '';
-	const generator = profile.generator ? `-G ${profile.generator}` : optionalBuildTypeFlag;
+	const generatorValue = profile.generator || buildToolType;
+	const generator = generatorValue ? `-G "${generatorValue}"` : '';
 
-	const cmakeCmd = `${cmakeExecutable} ${buildType} ${buildTool} ${cCompiler} ${cppCompiler} ${generator} -S . -B ${buildDir} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`.trim();
+	const sourceFlag = '-S .';
+	const buildFlag = `-B ${buildPath}`;
+
+	const cmakeOpStr = formatFlagList(profile.cmakeOptions);
+
+	const cmakeCmd = [
+		cmakeExecutable,
+		cmakeOpStr.includes('-DCMAKE_BUILD_TYPE')   ? '' : buildType,
+		cmakeOpStr.includes('-DCMAKE_MAKE_PROGRAM') ? '' : buildTool,
+		cmakeOpStr.includes('-DCMAKE_C_COMPILER')   ? '' : cCompiler,
+		cmakeOpStr.includes('-DCMAKE_CXX_COMPILER') ? '' : cppCompiler,
+		cmakeOpStr.includes('-G')                   ? '' : generator,
+		cmakeOpStr.includes('-S')                   ? '' : sourceFlag,
+		cmakeOpStr.includes('-B')                   ? '' : buildFlag,
+		cmakeOpStr,
+		'-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'
+	].filter(Boolean).join(' ');
 
 	const options: ExecOptions = {
-		cwd: projectPath
+		cwd: projectPath,
+		env: {
+			...process.env,
+			...(profile.environment ?? {}),
+			PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+		}
 	};
 
-	const buildPath = path.join(projectPath, buildDir);
+	if(!buildPath) {
+		vscode.window.showErrorMessage("Build path undefined.");
+		return;
+	}
 
 	output.appendLine(`creating V1 Query files in build directory: ${buildPath}`);
 	output.appendLine(`executed cmake command: ${cmakeCmd}`);
@@ -60,8 +89,6 @@ export function runCMakeSyncCommand(projectPath: string) {
 		output.appendLine('[Error] Failed to start CMake process.');
 		return;
 	}
-
-	parseCMakeFileApiReply(buildPath);
 
 	child.stdout?.on('data', (data: Buffer) => {
 		output.append(data.toString());
@@ -76,68 +103,13 @@ export function runCMakeSyncCommand(projectPath: string) {
 			output.appendLine(`[Error] CMake exited with code ${code}`);
 		} else {
 			output.appendLine('[Info] CMake finished successfully.');
-		}
-	});
-}
-
-export async function getCleanCMakeTargets(buildDir: string): Promise<string[]> {
-	return new Promise((resolve, reject) => {
-		const command = `cmake --build "${buildDir}" --target help`;
-
-		cp.exec(command, (error, stdout, stderr) => {
-			if (error) {
-				reject(new Error(`Failed to get CMake targets: ${error.message}`));
+			if(!buildPath) {
+				vscode.window.showErrorMessage("Build path undefined.");
 				return;
 			}
-
-			// Common CMake system/utility targets to filter out
-			const systemTargets = new Set([
-				'clean', 'help', 'install', 'package', 'package_source',
-				'edit_cache', 'rebuild_cache', 'test', 'preinstall', 'install/local',
-				'install/strip', 'list_install_components', 'depend',
-				'build.ninja', 'cmake_force', 'cmake_check_build_system'
-			]);
-
-			const targets = stdout
-				.split('\n')
-				.map(line => line.trim())
-				// Look for lines that contain target descriptions (usually have "...")
-				.filter(line => line.includes('...') || line.includes(':'))
-				.map(line => {
-					// Extract target name (everything before "..." or ":")
-					if (line.includes('...')) {
-						return line.split('...')[0].trim();
-					} else if (line.includes(':')) {
-						return line.split(':')[0].trim();
-					}
-					return line.trim();
-				})
-				.filter(target => {
-					if (!target || target.length === 0) { return false; }
-
-					// Filter out system targets
-					if (systemTargets.has(target)) { return false; }
-
-					// Filter out internal/generated targets (usually start with underscore or contain slashes)
-					if (target.startsWith('_')) { return false; }
-					if (target.includes('/') && !target.match(/^[a-zA-Z]/)) { return false; }
-
-					// Filter out file extensions (like .ninja files)
-					if (target.includes('.')) {
-						const ext = target.split('.').pop()?.toLowerCase();
-						if (['ninja', 'cmake', 'make', 'vcxproj'].includes(ext || '')) { return false; }
-					}
-
-					// Keep targets that look like actual build targets
-					return target.match(/^[a-zA-Z][a-zA-Z0-9_-]*$/);
-				})
-				.sort();
-
-			// Remove duplicates
-			const uniqueTargets = [...new Set(targets)];
-
-			resolve(uniqueTargets);
-		});
+			output.appendLine("parse file API");
+			parseCMakeFileApiReply(buildPath);
+		}
 	});
 }
 
@@ -147,10 +119,41 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 		output.clear();
 		output.show(true);
 
-		const cmakeCmd = `cmake --build "${buildDirPath}" --target "${targetName}"`;
+		const config = vscode.workspace.getConfiguration('cmaketoolchains');
+		setProfiles(config.get('cmakeProfiles') || []);
+
+		const cmakeSelectedProfile = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedProfile');
+		const profile = profiles.find(p => p.name === cmakeSelectedProfile);
+		if (!profile) {
+			throw new Error("Selected profile not found.");
+		}
+
+		setToolchains(config.get('cmakeToolchains') || []);
+		const toolchain = toolchains.find(tc => tc.name === profile.toolchain);
+
+		if (!toolchain) {
+			throw new Error("Toolchain not found set by the current selected cmake profile.");
+		}
+
+		const buildOptions = formatFlagList(profile.buildOptions);
+
+		const buildDirFlag = `--build "${buildDirPath}"`;
+		const buildTargetFlag = `--target "${targetName}"`;
+
+		const cmakeCmd = [
+			'cmake',
+			`${buildOptions.includes("--build") ? '' : buildDirFlag}`,
+			`${buildOptions.includes("--target") ? '' : buildTargetFlag}`,
+			`${buildOptions}`
+		].filter(Boolean).join(' ');
 
 		const options: ExecOptions = {
-			cwd: projectPath
+			cwd: projectPath,
+			env: {
+				...process.env,
+				...(profile.environment ?? {}),
+				PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+			}
 		};
 
 		output.appendLine(`[CMake] build command: ${cmakeCmd}`);
@@ -192,7 +195,7 @@ function detectGeneratorFromBuildTool(buildToolPathOrName: string) {
 		return 'Ninja';
 	}
 	if (name.includes('mingw32-make') || name === 'make.exe' || name === 'make') {
-		return 'MinGW Makefiles'; // or 'Unix Makefiles' if you want
+		return 'MinGW Makefiles'; // 'Unix Makefiles'
 	}
 	if (name.includes('jom')) {
 		return 'NMake Makefiles';
@@ -217,6 +220,34 @@ function createCodeModelV1Query(buildDir: string) {
 	fs.writeFileSync(queryFileCodemodelv2, '');
 	const queryFileCachev2 = path.join(queryDir, 'cache-v2');
 	fs.writeFileSync(queryFileCachev2, '');
+}
+
+function formatFlagList(flags?: string[]): string {
+   if (!flags || flags.length === 0) {
+		return '';
+	}
+   return flags.map(flag => `${flag}`).join(' ');
+}
+
+function extractBuildPath(options: string[] | undefined): string | null {
+   if (!options) {
+		return null;
+	}
+
+   for (let i = options.length - 1; i >= 0; --i) {
+      const opt = options[i];
+
+      if (opt === '-B' && options[i + 1]) {
+         return options[i + 1];
+      }
+
+      const match = opt.match(/^[-/]B(.+)/);
+      if (match) {
+         return match[1];
+      }
+   }
+
+   return null;
 }
 
 async function parseCMakeFileApiReply(buildDir: string) {
@@ -281,3 +312,4 @@ async function findIndexFile(replyDir: string): Promise<string | null> {
 	const indexFile = files.find(f => f.startsWith('index-') && f.endsWith('.json'));
 	return indexFile ? path.join(replyDir, indexFile) : null;
 }
+

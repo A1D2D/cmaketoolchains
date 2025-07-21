@@ -183,19 +183,15 @@
                 },
                 "description": "Extra CMake command line options."
               },
-              "cacheVariables": {
-                "type": "object",
-                "description": "CMake cache variables to define.",
-                "additionalProperties": {
-                  "type": "string"
-                }
-              },
               "buildDirectory": {
                 "type": "string",
                 "description": "Build output directory path."
               },
               "buildOptions": {
-                "type": "string",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
                 "description": "Flags for the build step (e.g. -j 14)."
               },
               "environment": {

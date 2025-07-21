@@ -1,3 +1,5 @@
+import path from 'path';
+import * as vscode from 'vscode';
 
 interface Profile {
    name: string; // Profile name (e.g., Debug)
@@ -5,9 +7,8 @@ interface Profile {
    toolchain: string; // Toolchain name to use
    generator: string; // CMake generator (e.g. Ninja, Unix Makefiles)
    cmakeOptions?: string[]; // Extra CMake command line options
-   cacheVariables?: { [key: string]: string }; // CMake cache variables to define
    buildDirectory?: string; // Build output directory path
-   buildOptions?: string; // Flags for the build step (e.g. -j 14)
+   buildOptions?: string[]; // Flags for the build step (e.g. -j 14)
    environment?: { [key: string]: string }; // Additional environment variables for the build
 }
 
@@ -30,9 +31,12 @@ export let toolchains: Toolchain[] = [];
 
 export let profiles: Profile[] = [];
 
-export let activeBuildDir: string | null = null;
+export let buildPath: string | null = null;
+
+export let projectPath: string | null = null;
 
 export let avaliableTargets: BuildTargets[] | null = null;
+
 
 
 export function setProfiles(newProfiles: Profile[]) {
@@ -43,8 +47,8 @@ export function setToolchains(newToolchains: Toolchain[]) {
    toolchains = newToolchains; // Set new toolchains
 }
 
-export function setActiveBuildDir(newActiveBuildDir: string) {
-   activeBuildDir = newActiveBuildDir;
+export function setBuildPath(newBuildPath: string | null) {
+   buildPath = newBuildPath;
 }
 
 export function setAvaliableTargets(newAvaliableTargets: BuildTargets[]) {
@@ -60,11 +64,28 @@ export function getProfiles() {
 }
 
 export function getCurrentProfile() {
-   return activeBuildDir;
+   return buildPath;
 }
 
 export function getAvaliableTargets() {
    return avaliableTargets;
+}
+
+export function initProjectFolder() {
+   const workspaceFolders = vscode.workspace.workspaceFolders;
+   if (!workspaceFolders) {
+      vscode.window.showErrorMessage('No workspace folder open!');
+      return;
+   }
+
+   projectPath = workspaceFolders[0].uri.fsPath;
+}
+
+export function resolvePath(p: string): string | null {
+   if(!projectPath) {
+      return null;
+   }
+   return path.isAbsolute(p) ? p : path.join(projectPath, p);
 }
 
 export { BuildTargets };

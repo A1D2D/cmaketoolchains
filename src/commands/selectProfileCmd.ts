@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { toolchains, profiles, activeBuildDir, setToolchains, setProfiles, setActiveBuildDir} from '../globals';
+import { toolchains, profiles, setToolchains, setProfiles, setBuildPath} from '../globals';
 
 let profileStatusBar: vscode.StatusBarItem;
 
