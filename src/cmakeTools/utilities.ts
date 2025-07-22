@@ -4,7 +4,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExecOptions } from 'child_process';
 
-import { toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath } from '../globals';
+import { toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs } from '../globals';
+import { parseLaunchConfig } from './runDebug';
 
 export function runCMakeSyncCommand(projectPath: string) {
 	const config = vscode.workspace.getConfiguration('cmaketoolchains');
@@ -135,10 +136,14 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 			throw new Error("Toolchain not found set by the current selected cmake profile.");
 		}
 
+		setRunConfigs(parseLaunchConfig());
+		
+		const buildTarget = runConfigs.find(cfg => cfg.executeable === targetName)?.target || `${targetName}`;
+
 		const buildOptions = formatFlagList(profile.buildOptions);
 
 		const buildDirFlag = `--build "${buildDirPath}"`;
-		const buildTargetFlag = `--target "${targetName}"`;
+		const buildTargetFlag = `--target "${buildTarget}"`;
 
 		const cmakeCmd = [
 			'cmake',

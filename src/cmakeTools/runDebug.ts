@@ -115,21 +115,8 @@ export async function runSelectedTarget(selectedTarget: string) {
    }
 
    const exePath = target.artifacts[0];
-   runInTerminal(exePath, []);
-}
+   const args: string[] = [];
 
-export function debugSelectedTarget(selectedTarget: string) {
-   const target = avaliableTargets?.find(t => t.name === selectedTarget);
-   if (!target || !target.artifacts || target.artifacts.length === 0) {
-      vscode.window.showErrorMessage('Target or artifact not found.');
-      return;
-   }
-
-   const exePath = target.artifacts[0];
-   debugInTerminal(exePath, []);
-}
-
-function runInTerminal(exePath: string, args: string[] = []) {
    const exeName = path.basename(exePath);
    const fullCommand = `"${exePath}" ${args.join(' ')}`;
 
@@ -143,7 +130,16 @@ function runInTerminal(exePath: string, args: string[] = []) {
    terminal.sendText(fullCommand);
 }
 
-async function debugInTerminal(exePath: string, args: string[] = []) {
+export async function debugSelectedTarget(selectedTarget: string) {
+   const target = avaliableTargets?.find(t => t.name === selectedTarget);
+   if (!target || !target.artifacts || target.artifacts.length === 0) {
+      vscode.window.showErrorMessage('Target or artifact not found.');
+      return;
+   }
+
+   const exePath = target.artifacts[0];
+   const args: string[] = [];
+
    const folder = vscode.workspace.workspaceFolders?.[0]; // Or pass this as parameter
 
    const config: vscode.DebugConfiguration = {
