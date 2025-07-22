@@ -19,7 +19,7 @@ interface Toolchain {
    buildTool: string; // Path to the build tool executable
    ccompiler: string; // Path to the C compiler executable
    cppcompiler: string; // Path to the C++ compiler executable
-   debugger?: string
+   debugger?: string;
 }
 
 interface BuildTargets {
@@ -31,9 +31,9 @@ interface RunDebugConfig {
    name: string;
    target: string;
    executeable: string;
-   programArgs: string;
-   workDir: string;
-   envVars: string;
+   programArgs?: string;
+   workDir?: string;
+   envVars?: string;
    runAdmin: boolean;
    runExternal: boolean;
 }
@@ -42,20 +42,26 @@ export let toolchains: Toolchain[] = [];
 
 export let profiles: Profile[] = [];
 
+export let runConfigs: RunDebugConfig[] = [];
+
 export let buildPath: string | null = null;
 
 export let projectPath: string | null = null;
 
 export let avaliableTargets: BuildTargets[] | null = null;
 
+export let context: vscode.ExtensionContext | null = null;
 
+export function setToolchains(newToolchains: Toolchain[]) {
+   toolchains = newToolchains; // Set new toolchains
+}
 
 export function setProfiles(newProfiles: Profile[]) {
    profiles = newProfiles; // Set new profiles
 }
 
-export function setToolchains(newToolchains: Toolchain[]) {
-   toolchains = newToolchains; // Set new toolchains
+export function setRunConfigs(newRunConfigs: RunDebugConfig[]) {
+   runConfigs = newRunConfigs;
 }
 
 export function setBuildPath(newBuildPath: string | null) {
@@ -64,6 +70,10 @@ export function setBuildPath(newBuildPath: string | null) {
 
 export function setAvaliableTargets(newAvaliableTargets: BuildTargets[]) {
    avaliableTargets = newAvaliableTargets;
+}
+
+export function setContext(newContext: vscode.ExtensionContext) {
+   context = newContext;
 }
 
 export function getToolchains() {

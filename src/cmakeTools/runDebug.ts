@@ -1,74 +1,101 @@
 import * as vscode from 'vscode';
-import { avaliableTargets, projectPath, RunDebugConfig } from '../globals';
+import { avaliableTargets, projectPath, runConfigs, RunDebugConfig, setRunConfigs } from '../globals';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as jsonc from 'jsonc-parser';
 
-export function parseLaunchConfig(selectedTarget: string): RunDebugConfig | null {
-   if(!projectPath) {
-      vscode.window.showErrorMessage('project path invalid.');
-      return null;
+export function parseLaunchConfig(): RunDebugConfig[] {
+   if (!projectPath) {
+      vscode.window.showErrorMessage('Project path invalid.');
+      return [];
    }
+
    const launchFilePath = path.join(projectPath, '.vscode', 'launch.json');
-   if (!launchFilePath) {
-      return null;
+   if (!fs.existsSync(launchFilePath)) {
+      return [];
    }
+
    const raw = fs.readFileSync(launchFilePath, 'utf8');
-   const json:any = JSON.parse(raw);
-
+   const json: any = jsonc.parse(raw);
    const configurations = json?.configurations;
-	if (!configurations) {
-		return null;
-	}
+   if (!Array.isArray(configurations)) {
+      return [];
+   }
 
-   let runDebugConfig: RunDebugConfig | null = null;
+   const configs: RunDebugConfig[] = [];
 
-	if (Array.isArray(configurations)) {
-		for (const entry of configurations) {
-         if(entry?.type !== 'cmake-toolchains') {
-            continue;
+   for (const entry of configurations) {
+      if (entry?.type !== 'cmake-toolchains' || entry?.request !== 'launch') {
+         continue;
+      }
+      if (!entry.name || !entry.target || !entry.executeable) {
+         continue;
+      }
+
+      const config: RunDebugConfig = {
+         name: entry.name,
+         target: entry.target,
+         executeable: entry.executeable,
+         programArgs: entry.programArgs ?? undefined,
+         workDir: entry.workDir ?? undefined,
+         envVars: entry.envVars ?? undefined,
+         runAdmin: entry.runAdmin ?? false,
+         runExternal: entry.runExternal ?? false,
+      };
+
+      configs.push(config);
+   }
+
+   return configs;
+}
+
+export async function saveLaunchConfig(newConfig: RunDebugConfig) {
+   if (!projectPath) {
+      vscode.window.showErrorMessage('Project path invalid.');
+      return;
+   }
+
+   const launchFilePath = path.join(projectPath, '.vscode', 'launch.json');
+   let raw = '';
+   try {
+      raw = fs.readFileSync(launchFilePath, 'utf8');
+   } catch {
+      raw = `{\n  "version": "0.2.0",\n  "configurations": []\n}`;
+   }
+
+   const newEntry = {
+      type: 'cmake-toolchains',
+      request: 'launch',
+      name: newConfig.name,
+      target: newConfig.target,
+      executeable: newConfig.executeable,
+      programArgs: newConfig.programArgs,
+      workDir: newConfig.workDir,
+      envVars: newConfig.envVars,
+      runAdmin: newConfig.runAdmin ?? false,
+      runExternal: newConfig.runExternal ?? false,
+   };
+
+   const edits = jsonc.modify(
+      raw,
+      ['configurations'],
+      (prev: any[]) => {
+         const idx = prev.findIndex(c => c.name === newConfig.name && c.type === 'cmake-toolchains');
+         if (idx >= 0) {
+            prev[idx] = newEntry; // Update
+         } else {
+            prev.push(newEntry); // Add
          }
-         if(entry?.request !== 'launch') {
-            continue;
-         }
-         if(entry?.executeable === selectedTarget) {
-            runDebugConfig = {
-               name: `${selectedTarget}`,
-               target: `${selectedTarget}`,
-               executeable: `${selectedTarget}`,
-               programArgs: '',
-               workDir: '',
-               envVars: '',
-               runAdmin: false,
-               runExternal: false
-            };
-            if(entry?.name) {
-               runDebugConfig.name = entry.name;
-            }
-            if(entry?.target) {
-               runDebugConfig.target = entry.target;
-            }
-            if(entry?.programArgs) {
-               runDebugConfig.programArgs = entry.programArgs;
-            }
-            if(entry?.workDir) {
-               runDebugConfig.workDir = entry.workDir;
-            }
-            if(entry?.envVars) {
-               runDebugConfig.envVars = entry.envVars;
-            }
-            if(entry?.runAdmin) {
-               runDebugConfig.runAdmin = entry.runAdmin;
-            }
-            if(entry?.runExternal) {
-               runDebugConfig.runExternal = entry.runExternal;
-            }
+         return prev;
+      },
+      { formattingOptions: { insertSpaces: true, tabSize: 2 } }
+   );
 
-            break;
-         }
-		}
-	}
+   const updated = jsonc.applyEdits(raw, edits);
+   fs.mkdirSync(path.dirname(launchFilePath), { recursive: true });
+   fs.writeFileSync(launchFilePath, updated, 'utf-8');
 
-   return runDebugConfig;
+   vscode.window.showInformationMessage(`Saved config "${newConfig.name}" to launch.json`);
 }
 
 export async function runSelectedTarget(selectedTarget: string) {
@@ -77,9 +104,12 @@ export async function runSelectedTarget(selectedTarget: string) {
       vscode.window.showErrorMessage('Target or artifact not found.');
       return;
    }
-   const targetConfig = parseLaunchConfig(selectedTarget);
 
-   if(targetConfig) {
+   setRunConfigs(parseLaunchConfig());
+
+   const targetConfig = runConfigs.find(cfg => cfg.executeable === selectedTarget);
+
+   if (targetConfig) {
       console.log(targetConfig);
    }
 

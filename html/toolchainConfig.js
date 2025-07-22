@@ -36,12 +36,19 @@ function updateToolchainFromForm() {
 }
 
 window.addEventListener('message', event => {
+   /**
+    * Handle messages from the extension host.
+    * @type {{ command: string, data: {profiles?: any[], toolchains?: Toolchain[] } }}
+    */
    const message = event.data;
 
    switch (message.command) {
       case 'setToolchains':
          toolchains = message.toolchains;
          render();
+         break;
+      case 'setProfiles':
+         document.getElementById('log').textContent = `Profiles updated: ${JSON.stringify(message.profiles)}`;
          break;
    }
 });
@@ -74,4 +81,4 @@ document.getElementById('action').onclick = e => {
    vscode.postMessage({ command: 'action' });
 };
 
-vscode.postMessage({ command: 'dataRequest' });
+vscode.postMessage({ command: 'getProfiles' });
