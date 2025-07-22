@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Toolchains</title>
+  <link rel="stylesheet" href="{{root}}/toolchainConfig.css" />
+</head>
+<body>
+  <div class="layout">
+    <h1 class="page-title">Toolchains</h1>
+    <div class="container">
+      <div class="sidebar">
+        <div class="topnav">
+          <button id="add" title="Add">+</button>
+          <button id="remove" title="Remove">–</button>
+          <button id="duplicate" title="Duplicate">⧉</button>
+          <button id="down" title="Down">˅</button>
+          <button id="up" title="Up">˄</button>
+        </div>
+        <select id="toolchain-list" size="10"></select>
+      </div>
+      <div class="main">
+        <div id="editor">
+          <form id="toolchain-form">
+            <label>Name: <input type="text" id="name" /></label><br />
+            <label>Toolset Folder: <input type="text" id="toolsetFolder" /></label><br />
+            <label>CMake: <input type="text" id="cmake" /></label><br />
+            <label>Build Tool: <input type="text" id="buildTool" /></label><br />
+            <label>C Compiler: <input type="text" id="ccompiler" /></label><br />
+            <label>C++ Compiler: <input type="text" id="cppcompiler" /></label><br />
+            <label>Debugger: <input type="text" id="debugger" /></label><br />
+          </form>
+        </div>
+        <div class="actions">
+          <button id="save">Save</button>
+          <button id="action">ACTION</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+		const vscode = acquireVsCodeApi();
+  </script>
+  <script src="{{root}}/toolchainConfig.js"></script>
+</body>
+</html>

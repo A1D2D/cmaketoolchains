@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Toolchains</title>
+  <link rel="stylesheet" href="{{root}}/profileConfig.css" />
+</head>
+<body>
+  <div class="layout">
+    <h1 class="page-title">Profiles</h1>
+    <div class="container">
+      <div class="sidebar">
+        <div class="topnav">
+          <button id="add" title="Add">+</button>
+          <button id="remove" title="Remove">–</button>
+          <button id="duplicate" title="Duplicate">⧉</button>
+          <button id="down" title="Down">˅</button>
+          <button id="up" title="Up">˄</button>
+        </div>
+        <select id="profile-list" size="10"></select>
+      </div>
+      <div class="main">
+        <div id="editor">
+          <form id="profile-form">
+            <label>Name: <input type="text" id="name" /></label><br />
+            <label>Build Type: <input type="text" id="buildType" /></label><br />
+            <label>Toolchain: <input type="text" id="toolchain" /></label><br />
+            <label>Generator: <input type="text" id="generator" /></label><br />
+            <label>Build Dir: <input type="text" id="buildDirectory" /></label><br />
+          </form>
+        </div>
+        <div class="actions">
+          <button id="save">Save</button>
+          <button id="action">ACTION</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+		const vscode = acquireVsCodeApi();
+  </script>
+  <script src="{{root}}/profileConfig.js"></script>
+</body>
+</html>

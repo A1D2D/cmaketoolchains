@@ -312,4 +312,3 @@ async function findIndexFile(replyDir: string): Promise<string | null> {
 	const indexFile = files.find(f => f.startsWith('index-') && f.endsWith('.json'));
 	return indexFile ? path.join(replyDir, indexFile) : null;
 }
-

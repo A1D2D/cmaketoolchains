@@ -27,6 +27,17 @@ interface BuildTargets {
    artifacts: string[] | null;
 }
 
+interface RunDebugConfig {
+   name: string;
+   target: string;
+   executeable: string;
+   programArgs: string;
+   workDir: string;
+   envVars: string;
+   runAdmin: boolean;
+   runExternal: boolean;
+}
+
 export let toolchains: Toolchain[] = [];
 
 export let profiles: Profile[] = [];
@@ -88,4 +99,4 @@ export function resolvePath(p: string): string | null {
    return path.isAbsolute(p) ? p : path.join(projectPath, p);
 }
 
-export { BuildTargets };
+export { BuildTargets, RunDebugConfig };
