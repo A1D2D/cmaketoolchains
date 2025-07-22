@@ -24,7 +24,9 @@ function updateForm() {
 }
 
 function updateToolchainFromForm() {
-   if (listEl.selectedIndex < 0) return;
+   if (listEl.selectedIndex < 0) {
+      return;
+   }
    const formFields = [
       'name', 'toolsetFolder', 'cmake',
       'buildTool', 'ccompiler', 'cppcompiler', 'debugger'
@@ -48,7 +50,7 @@ window.addEventListener('message', event => {
          render();
          break;
       case 'setProfiles':
-         document.getElementById('log').textContent = `Profiles updated: ${JSON.stringify(message.profiles)}`;
+         document.getElementById('log').textContent = `Profiles updated: ${JSON.stringify(message)}`;
          break;
    }
 });
@@ -75,7 +77,7 @@ document.getElementById('save').onclick = () => {
 
 document.getElementById("toolchain-list").onclick = e => {
    updateForm();
-}
+};
 
 document.getElementById('action').onclick = e => {
    vscode.postMessage({ command: 'action' });
