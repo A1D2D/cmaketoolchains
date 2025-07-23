@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExecOptions } from 'child_process';
 
-import { toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs } from '../globals';
+import { toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv } from '../globals';
 import { parseLaunchConfig } from './runDebug';
 
 export function runCMakeSyncCommand(projectPath: string) {
@@ -110,6 +110,7 @@ export function runCMakeSyncCommand(projectPath: string) {
 			}
 			output.appendLine("parse file API");
 			parseCMakeFileApiReply(buildPath);
+			getCMakeCompilerInfo(buildPath);
 		}
 	});
 }
@@ -138,7 +139,7 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 
 		setRunConfigs(parseLaunchConfig());
 		
-		const buildTarget = runConfigs.find(cfg => cfg.executeable === targetName)?.target || `${targetName}`;
+		const buildTarget = runConfigs.find(cfg => cfg.executable === targetName)?.target || `${targetName}`;
 
 		const buildOptions = formatFlagList(profile.buildOptions);
 
@@ -316,4 +317,15 @@ async function findIndexFile(replyDir: string): Promise<string | null> {
 	const files = await fs.promises.readdir(replyDir);
 	const indexFile = files.find(f => f.startsWith('index-') && f.endsWith('.json'));
 	return indexFile ? path.join(replyDir, indexFile) : null;
+}
+
+function getCMakeCompilerInfo(buildDir: string) {
+	const cacheFilePath = path.join(buildDir, 'CMakeCache.txt');
+	const cache = fs.readFileSync(cacheFilePath, 'utf-8');
+	const compilerId = cache.match(/^CMAKE_CXX_COMPILER_ID:INTERNAL=(.*)$/m)?.[1] ?? undefined;
+	const compilerPath = cache.match(/^CMAKE_CXX_COMPILER:FILEPATH=(.*)$/m)?.[1] ?? undefined;
+	setBuildToolEnv({
+		compilerId: compilerId, 
+		compilerPath: compilerPath
+	});
 }

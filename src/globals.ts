@@ -30,12 +30,17 @@ interface BuildTargets {
 interface RunDebugConfig {
    name: string;
    target: string;
-   executeable: string;
-   programArgs?: string;
+   executable: string;
+   programArgs?: string[];
    workDir?: string;
-   envVars?: string;
+   environment?: { [key: string]: string };
    runAdmin: boolean;
    runExternal: boolean;
+}
+
+interface BuildToolEnv {
+   compilerId?: string;
+   compilerPath?: string;
 }
 
 export let toolchains: Toolchain[] = [];
@@ -47,6 +52,8 @@ export let runConfigs: RunDebugConfig[] = [];
 export let buildPath: string | null = null;
 
 export let projectPath: string | null = null;
+
+export let buildToolEnv: BuildToolEnv | null = null;
 
 export let avaliableTargets: BuildTargets[] | null = null;
 
@@ -74,6 +81,10 @@ export function setAvaliableTargets(newAvaliableTargets: BuildTargets[]) {
 
 export function setContext(newContext: vscode.ExtensionContext) {
    context = newContext;
+}
+
+export function setBuildToolEnv(newBuildToolEnv: BuildToolEnv) {
+   buildToolEnv = newBuildToolEnv;
 }
 
 export function getToolchains() {
@@ -109,4 +120,4 @@ export function resolvePath(p: string): string | null {
    return path.isAbsolute(p) ? p : path.join(projectPath, p);
 }
 
-export { BuildTargets, RunDebugConfig };
+export { BuildTargets, RunDebugConfig, BuildToolEnv, Toolchain, Profile};

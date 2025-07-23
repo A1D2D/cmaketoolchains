@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { avaliableTargets, projectPath, runConfigs, RunDebugConfig, setRunConfigs } from '../globals';
+import { avaliableTargets, buildToolEnv, BuildToolEnv, Profile, profiles, projectPath, runConfigs, RunDebugConfig, setProfiles, setRunConfigs, setToolchains, Toolchain, toolchains } from '../globals';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as cp from 'child_process';
 
 import * as jsonc from 'jsonc-parser';
 
@@ -29,17 +30,17 @@ export function parseLaunchConfig(): RunDebugConfig[] {
       if (entry?.type !== 'cmake-toolchains' || entry?.request !== 'launch') {
          continue;
       }
-      if (!entry.name || !entry.target || !entry.executeable) {
+      if (!entry.name || !entry.target || !entry.executable) {
          continue;
       }
 
       const config: RunDebugConfig = {
          name: entry.name,
          target: entry.target,
-         executeable: entry.executeable,
+         executable: entry.executable,
          programArgs: entry.programArgs ?? undefined,
          workDir: entry.workDir ?? undefined,
-         envVars: entry.envVars ?? undefined,
+         environment: entry.environment ?? undefined,
          runAdmin: entry.runAdmin ?? false,
          runExternal: entry.runExternal ?? false,
       };
@@ -69,10 +70,10 @@ export async function saveLaunchConfig(newConfig: RunDebugConfig) {
       request: 'launch',
       name: newConfig.name,
       target: newConfig.target,
-      executeable: newConfig.executeable,
+      executable: newConfig.executable,
       programArgs: newConfig.programArgs,
       workDir: newConfig.workDir,
-      envVars: newConfig.envVars,
+      environment: newConfig.environment,
       runAdmin: newConfig.runAdmin ?? false,
       runExternal: newConfig.runExternal ?? false,
    };
@@ -106,28 +107,53 @@ export async function runSelectedTarget(selectedTarget: string) {
       return;
    }
 
-   setRunConfigs(parseLaunchConfig());
+   const config = vscode.workspace.getConfiguration('cmaketoolchains');
+   setProfiles(config.get('cmakeProfiles') || []);
 
-   const targetConfig = runConfigs.find(cfg => cfg.executeable === selectedTarget);
+   const cmakeSelectedProfile = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedProfile');
+   const profile = profiles.find(p => p.name === cmakeSelectedProfile);
+   if (!profile) {
+      throw new Error("Selected profile not found.");
+   }
 
-   if (targetConfig) {
-      console.log(targetConfig);
+   setToolchains(config.get('cmakeToolchains') || []);
+   const toolchain = toolchains.find(tc => tc.name === profile.toolchain);
+
+   if (!toolchain) {
+      throw new Error("Toolchain not found set by the current selected cmake profile.");
    }
 
    const exePath = target.artifacts[0];
-   const args: string[] = [];
 
-   const exeName = path.basename(exePath);
-   const fullCommand = `"${exePath}" ${args.join(' ')}`;
+   setRunConfigs(parseLaunchConfig());
 
-   const terminal = vscode.window.createTerminal({
-      name: `Run ${exeName}`,
-      cwd: path.dirname(exePath),
-      hideFromUser: false
-   });
+   const defaults: RunDebugConfig = {
+      name: `${path.basename(exePath)}`,
+      target: `${selectedTarget}`,
+      executable: `${selectedTarget}`,
+      programArgs: [],
+      workDir: `${path.dirname(exePath)}`,
+      runAdmin: false,
+      runExternal: false
+   };
 
-   terminal.show(true);
-   terminal.sendText(fullCommand);
+   const targetConfig: RunDebugConfig = runConfigs.find(cfg => cfg.executable === selectedTarget) || defaults;
+
+   const sConfig: RunDebugConfig = {
+      name: targetConfig.name ?? defaults.name,
+      target: targetConfig.target ?? defaults.target,
+      executable: targetConfig.executable ?? defaults.executable,
+      programArgs: targetConfig.programArgs ?? defaults.programArgs,
+      workDir: targetConfig.workDir ?? defaults.workDir,
+      runAdmin: targetConfig.runAdmin ?? defaults.runAdmin,
+      runExternal: targetConfig.runExternal ?? defaults.runExternal,
+   };
+
+   if(sConfig.runExternal) {
+      runInExternalConsole(exePath, sConfig, profile, toolchain);
+   } else {
+      runInVsCode(exePath, sConfig, profile, toolchain);
+   }
 }
 
 export async function debugSelectedTarget(selectedTarget: string) {
@@ -137,25 +163,138 @@ export async function debugSelectedTarget(selectedTarget: string) {
       return;
    }
 
+   const config = vscode.workspace.getConfiguration('cmaketoolchains');
+   setProfiles(config.get('cmakeProfiles') || []);
+
+   const cmakeSelectedProfile = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedProfile');
+   const profile = profiles.find(p => p.name === cmakeSelectedProfile);
+   if (!profile) {
+      throw new Error("Selected profile not found.");
+   }
+
+   setToolchains(config.get('cmakeToolchains') || []);
+   const toolchain = toolchains.find(tc => tc.name === profile.toolchain);
+
+   if (!toolchain) {
+      throw new Error("Toolchain not found set by the current selected cmake profile.");
+   }
+
    const exePath = target.artifacts[0];
-   const args: string[] = [];
 
-   const folder = vscode.workspace.workspaceFolders?.[0]; // Or pass this as parameter
+   setRunConfigs(parseLaunchConfig());
 
-   const config: vscode.DebugConfiguration = {
-      name: `Debug ${path.basename(exePath)}`,
-      type: 'cppdbg',
-      request: 'launch',
-      program: exePath,
-      args: args,
-      cwd: path.dirname(exePath),
-      stopAtEntry: false,
-      console: 'externalTerminal', // or "integratedTerminal" or "internalConsole"
-      MIMode: process.platform === 'win32' ? 'gdb' : 'lldb', // or "gdb"/"lldb"/"cppvsdbg" depending on platform
+   const defaults: RunDebugConfig = {
+      name: `${path.basename(exePath)}`,
+      target: `${selectedTarget}`,
+      executable: `${selectedTarget}`,
+      programArgs: [],
+      workDir: `${path.dirname(exePath)}`,
+      runAdmin: false,
+      runExternal: false
    };
 
-   const success = await vscode.debug.startDebugging(folder, config);
-   if (!success) {
+   const targetConfig: RunDebugConfig = runConfigs.find(cfg => cfg.executable === selectedTarget) || defaults;
+
+   const sConfig: RunDebugConfig = {
+      name: targetConfig.name ?? defaults.name,
+      target: targetConfig.target ?? defaults.target,
+      executable: targetConfig.executable ?? defaults.executable,
+      programArgs: targetConfig.programArgs ?? defaults.programArgs,
+      workDir: targetConfig.workDir ?? defaults.workDir,
+      runAdmin: targetConfig.runAdmin ?? defaults.runAdmin,
+      runExternal: targetConfig.runExternal ?? defaults.runExternal,
+   };
+
+   debugSomewhere(exePath, sConfig, profile, toolchain, buildToolEnv || {compilerId: '', compilerPath:''});
+}
+
+function runInExternalConsole(exePath: string, config: RunDebugConfig, profile: Profile, toolchain: Toolchain) {
+   if (process.platform !== 'win32') {
+      runInVsCode(exePath, config, profile, toolchain);
+      vscode.window.showWarningMessage("External CMD launch only works on Windows.");
+      return;
+   }
+
+   if(config.runAdmin) {
+      vscode.window.showWarningMessage("Please run VSCode as an administrator. The 'runAdmin' flag is not supported and should be ignored if VSCode is already running with elevated privileges.");
+   }
+
+   const args = config.programArgs?.join(' ') ?? '';
+   const fullCommand = `"${exePath}" ${args}`;
+   const workDir = config.workDir ?? path.dirname(exePath);
+
+   cp.exec(`cmd.exe /c start cmd.exe /k ${fullCommand}`, {
+      cwd: config.workDir,
+      env: {
+         ...process.env,
+         ...(profile.environment ?? {}),
+         ...(config.environment ?? {}),
+         PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+      },
+   }).unref();
+}
+
+function runInVsCode(exePath: string, config: RunDebugConfig, profile: Profile, toolchain: Toolchain) {
+   const cmd = `"${exePath}" ${config.programArgs?.join(' ')}`;
+
+   if(config.runAdmin) {
+      vscode.window.showWarningMessage("Please run VSCode as an administrator. The 'runAdmin' flag is not supported and should be ignored if VSCode is already running with elevated privileges.");
+   }
+
+   const terminal = vscode.window.createTerminal({
+      name: `Run ${config.name}`,
+      cwd: config.workDir,
+      hideFromUser: false,
+      env: {
+         ...process.env,
+         ...(profile.environment ?? {}),
+         ...(config.environment ?? {}),
+         PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+      }
+   });
+
+   terminal.show(true);
+   
+   terminal.sendText(cmd);
+}
+
+async function debugSomewhere(exePath: string, config: RunDebugConfig, profile: Profile, toolchain: Toolchain, buildToolEnv: BuildToolEnv) {
+   if(config.runAdmin) {
+      vscode.window.showWarningMessage("Please run VSCode as an administrator. The 'runAdmin' flag is not supported and should be ignored if VSCode is already running with elevated privileges.");
+   }
+
+   const mergedEnv = {
+      ...process.env,
+      ...(profile.environment ?? {}),
+      ...(config.environment ?? {}),
+      PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+   };
+
+   const environmentArray = Object.entries(mergedEnv).map(([name, value]) => ({
+      name, value: String(value)
+   }));
+
+   const dbgConfig: vscode.DebugConfiguration = {
+      name: `Debug ${config.name}`,
+      type: `${buildToolEnv?.compilerId === 'MSVC' ? 'cppvsdbg' : 'cppdbg'}`,
+      request: 'launch',
+      program: exePath,
+      args: config.programArgs?.join(' '),
+      cwd: config.workDir,
+      stopAtEntry: false,
+      console: 'externalTerminal',
+      runInExternalConsole: config.runExternal,
+      MIMode: `${buildToolEnv?.compilerId === 'MSVC' ? 'cppvsdbg' : (process.platform === 'win32' ? 'gdb' : 'lldb')}`,
+      environment: environmentArray
+   };
+
+   const folder = vscode.workspace.workspaceFolders?.[0];
+   const success = await vscode.debug.startDebugging(folder, dbgConfig);
+   if (success) {
+      setTimeout(() => {
+         vscode.window.activeTerminal?.show(true);
+      }, 1000);
+   } else {
       vscode.window.showErrorMessage('Failed to start debugger');
    }
 }

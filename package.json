@@ -218,27 +218,29 @@
               "target": {
                 "type": "string",
                 "description": "target.",
-                "default": "target def"
+                "default": "all"
               },
-              "executeable": {
+              "executable": {
                 "type": "string",
-                "description": "executeable.",
-                "default": "executeable def"
+                "description": "executable."
               },
               "programArgs": {
-                "type": "string",
-                "description": "programArgs",
-                "default": "programArgs def"
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "programArgs"
               },
               "workDir": {
                 "type": "string",
-                "description": "workDir",
-                "default": "workDir def"
+                "description": "workDir"
               },
-              "envVars": {
-                "type": "string",
-                "description": "envVars",
-                "default": "envVars def"
+              "environment": {
+                "type": "object",
+                "description": "Additional environment variables.",
+                "additionalProperties": {
+                  "type": "string"
+                }
               },
               "runAdmin": {
                 "type": "boolean",
