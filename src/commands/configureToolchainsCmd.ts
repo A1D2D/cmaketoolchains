@@ -6,13 +6,20 @@ import path from 'path';
 import fs from 'fs';
 
 interface ToolchainPageState {
-   toolchainTemp: Toolchain[]
-   pageCache: any
+   toolchains: Toolchain[]
+   sS: any
 }
 
-let pageState: ToolchainPageState;
+let pageState: ToolchainPageState = {
+   toolchains: [],
+   sS: {}
+};
 
 export function registerConfigureToolchainsCommand(context: vscode.ExtensionContext) {
+   const config = vscode.workspace.getConfiguration('cmaketoolchains');
+   setToolchains(config.get('cmakeToolchains') || []);
+   pageState.toolchains = toolchains;
+
    const cmd = vscode.commands.registerCommand('cmaketoolchains.configureToolchains', async () => {
       vscode.window.showInformationMessage('Configure Toolchains: in progress');
       openToolchainManagerPanel("Configure Toolchains");
@@ -33,7 +40,7 @@ function openPanel(panelId: string, name: string | undefined, htmlPath: string):
    html = html.replace(/{{root}}/g, webUri.toString());
 
    panel.webview.html = html;
-
+   sync(panel);
    panel.webview.onDidReceiveMessage((message) => {
       messageHandler(message, panel);
    }, undefined, context!.subscriptions);
@@ -63,6 +70,10 @@ async function messageHandler(message: Message, panel: WebviewPanel): Promise<vo
          break;
       case 'reload':
          console.log('reload requested');
+         const config = vscode.workspace.getConfiguration('cmaketoolchains');
+         setToolchains(config.get('cmakeToolchains') || []);
+         pageState.toolchains = toolchains;
+         sync(panel);
          break;
       case 'selectFolder':
          const folderUris = await vscode.window.showOpenDialog({
