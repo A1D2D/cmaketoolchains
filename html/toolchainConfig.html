@@ -1,47 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Manage Toolchains</title>
-  <link rel="stylesheet" href="{{root}}/toolchainConfig.css" />
+   <meta charset="UTF-8" />
+   <title>Manage Toolchains</title>
+   <link rel="stylesheet" href="{{root}}/toolchainConfig.css" />
 </head>
+
 <body>
-  <div class="layout">
-    <h1 class="page-title">Toolchains</h1>
-    <div class="container">
-      <div class="sidebar">
-        <div class="topnav">
-          <button id="add" title="Add">+</button>
-          <button id="remove" title="Remove">–</button>
-          <button id="duplicate" title="Duplicate">⧉</button>
-          <button id="down" title="Down">˅</button>
-          <button id="up" title="Up">˄</button>
-        </div>
-        <select id="toolchain-list" size="10"></select>
+   <div class="layout">
+      <h1 class="page-title">Toolchains</h1>
+
+      <div class="container">
+         <div class="sidebar">
+            <div class="topnav">
+               <button id="add" title="Add">+</button>
+               <button id="remove" title="Remove">–</button>
+               <button id="duplicate" title="Duplicate">⧉</button>
+               <button id="down" title="Down">˅</button>
+               <button id="up" title="Up">˄</button>
+            </div>
+            <label for="toolchain-list"></label><select id="toolchain-list" size="10"></select>
+         </div>
+         <div class="main">
+            <div id="editor">
+               <form id="toolchain-form">
+                  <div class="field-row">
+                     <label for="name">Name:</label>
+                     <input type="text" id="name" list="name" placeholder="Enter name..." style="width: 100%;" />
+                  </div>
+
+                  <div class="field-row">
+                     <label for="toolsetFolder">Toolset Folder:</label>
+                     <input type="text" id="toolsetFolder" list="toolset-options" placeholder="Enter or choose path..." />
+                     <datalist id="toolset-options">
+                        <option value="IDK">
+                        <option value="IDK2">
+                        <option value="IDK3">
+                     </datalist>
+                     <button type="button" onclick="openFolderPicker('toolsetFolder')">📁</button>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="cmakePath">Cmake:</label>
+                     <input type="text" id="cmakePath" list="cmake-options" placeholder="Enter or choose path..." />
+                     <datalist id="cmake-options">
+                        <option value="IDK">
+                        <option value="IDK2">
+                        <option value="IDK3">
+                     </datalist>
+                     <button type="button" onclick="openFilePicker('cmakePath')">📁</button>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="buildToolPath">Build Tool:</label>
+                     <input type="text" id="buildToolPath" list="buildTool-options" placeholder="Enter or choose path..." />
+                     <datalist id="buildTool-options">
+                        <option value="IDK">
+                        <option value="IDK2">
+                        <option value="IDK3">
+                     </datalist>
+                     <button type="button" onclick="openFilePicker('buildToolPath')">📁</button>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="cCompilerPath">C Compiler:</label>
+                     <input type="text" id="cCompilerPath" list="cCompiler-options" placeholder="Enter or choose path..." />
+                     <datalist id="cCompiler-options">
+                        <option value="IDK">
+                        <option value="IDK2">
+                        <option value="IDK3">
+                     </datalist>
+                     <button type="button" onclick="openFilePicker('cCompilerPath')">📁</button>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="cppCompilerPath">C++ Compiler:</label>
+                     <input type="text" id="cppCompilerPath" list="cppCompiler-options" placeholder="Enter or choose path..." />
+                     <datalist id="cppCompiler-options">
+                        <option value="IDK">
+                        <option value="IDK2">
+                        <option value="IDK3">
+                     </datalist>
+                     <button type="button" onclick="openFilePicker('cppCompilerPath')">📁</button>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="debuggerPath">Debugger:</label>
+                     <input type="text" id="debuggerPath" list="debugger-options" placeholder="Enter or choose path..." />
+                     <datalist id="debugger-options">
+                        <option value="IDK">
+                        <option value="IDK2">
+                        <option value="IDK3">
+                     </datalist>
+                     <button type="button" onclick="openFilePicker('debuggerPath')">📁</button>
+                     <button type="button">🔍</button>
+                  </div>
+               </form>
+            </div>
+         </div>
       </div>
-      <div class="main">
-        <div id="editor">
-          <form id="toolchain-form">
-            <label>Name: <input type="text" id="name" /></label><br />
-            <label>Toolset Folder: <input type="text" id="toolsetFolder" /></label><br />
-            <label>CMake: <input type="text" id="cmake" /></label><br />
-            <label>Build Tool: <input type="text" id="buildTool" /></label><br />
-            <label>C Compiler: <input type="text" id="ccompiler" /></label><br />
-            <label>C++ Compiler: <input type="text" id="cppcompiler" /></label><br />
-            <label>Debugger: <input type="text" id="debugger" /></label><br />
-          </form>
-        </div>
-        <h1 id="log"></h1>
-        <div class="actions">
-          <button id="save">Save</button>
-          <button id="action">ACTION</button>
-        </div>
+      <div class="bottomnav">
+         <button id="reload" title="Reload">Reload</button>
+         <button id="save" title="Save">Save</button>
       </div>
-    </div>
-  </div>
-  <script>
-		const vscode = acquireVsCodeApi();
-  </script>
-  <script src="{{root}}/toolchainConfig.js"></script>
+   </div>
+   <script>
+      const vscode = acquireVsCodeApi();
+   </script>
+   <script src="{{root}}/toolchainConfig.js"></script>
 </body>
+
 </html>
