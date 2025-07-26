@@ -1,44 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Manage Toolchains</title>
-  <link rel="stylesheet" href="{{root}}/profileConfig.css" />
+   <meta charset="UTF-8" />
+   <title>Manage Profiles</title>
+   <link rel="stylesheet" href="{{root}}/profileConfig.css" />
 </head>
+
 <body>
-  <div class="layout">
-    <h1 class="page-title">Profiles</h1>
-    <div class="container">
-      <div class="sidebar">
-        <div class="topnav">
-          <button id="add" title="Add">+</button>
-          <button id="remove" title="Remove">–</button>
-          <button id="duplicate" title="Duplicate">⧉</button>
-          <button id="down" title="Down">˅</button>
-          <button id="up" title="Up">˄</button>
-        </div>
-        <select id="profile-list" size="10"></select>
+   <div class="layout">
+      <h1 class="page-title">Profiles</h1>
+
+      <div class="container">
+         <div class="sidebar">
+            <div class="topnav">
+               <button id="add" title="Add">+</button>
+               <button id="remove" title="Remove">–</button>
+               <button id="duplicate" title="Duplicate">⧉</button>
+               <button id="down" title="Down">˅</button>
+               <button id="up" title="Up">˄</button>
+            </div>
+            <label for="profile-list"></label><select id="profile-list" size="10"></select>
+         </div>
+         <div class="main">
+            <div id="editor">
+               <form id="profile-form">
+                  <div class="field-row full-width">
+                     <label for="name">Name:</label>
+                     <input type="text" id="name" list="name" placeholder="Enter name..."/>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="buildType">Build Type:</label>
+                     <input type="text" id="buildType" list="build-type-options" placeholder="Enter buildType..." />
+                     <datalist id="build-type-options">
+                        <option value="Debug">
+                        <option value="Release">
+                        <option value="RelWithDebInfo">
+                        <option value="MinSizeRel">
+                     </datalist>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="toolchain">Toolchain:</label>
+                     <input type="text" id="toolchain" list="toolchain-options" placeholder="Pick Toolchain..." />
+                     <datalist id="toolchain-options">
+                        <option value="Toolchian1">
+                        <option value="Toolchian2">
+                        <option value="Toolchian3">
+                     </datalist>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="generator">Generator:</label>
+                     <input type="text" id="generator" list="generator-options" placeholder="Pick Generator..." />
+                     <datalist id="generator-options">
+                        <option value="Ninja">
+                        <option value="Unix Makefiles">
+                     </datalist>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="cmakeOptions">CMake Options:</label>
+                     <textarea id="cmakeOptions" placeholder="-DCMAKE_FOO=bar\n-DENABLE_FEATURE=ON"></textarea>
+                  </div>
+
+                  <div class="field-row">
+                     <label for="buildDirectory">Build Directory:</label>
+                     <input type="text" id="buildDirectory" list="buildDirectory-options"
+                        placeholder="Enter or choose path..." />
+                     <datalist id="buildDirectory-options">
+                        <option value="build">
+                     </datalist>
+                     <button type="button" onclick="openFolderPicker('buildDirectory')">📁</button>
+                     <button type="button">🔍</button>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="buildOptions">Build Options:</label>
+                     <textarea id="buildOptions" placeholder="-j4\n--target install"></textarea>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="environment">Environment:</label>
+                     <textarea id="environment" placeholder="KEY=value per line"></textarea>
+                  </div>
+                  
+               </form>
+            </div>
+         </div>
       </div>
-      <div class="main">
-        <div id="editor">
-          <form id="profile-form">
-            <label>Name: <input type="text" id="name" /></label><br />
-            <label>Build Type: <input type="text" id="buildType" /></label><br />
-            <label>Toolchain: <input type="text" id="toolchain" /></label><br />
-            <label>Generator: <input type="text" id="generator" /></label><br />
-            <label>Build Dir: <input type="text" id="buildDirectory" /></label><br />
-          </form>
-        </div>
-        <div class="actions">
-          <button id="save">Save</button>
-          <button id="action">ACTION</button>
-        </div>
+      <div class="bottomnav">
+         <button id="reload" title="Reload">Reload</button>
+         <button id="save" title="Save">Save</button>
       </div>
-    </div>
-  </div>
-  <script>
-		const vscode = acquireVsCodeApi();
-  </script>
-  <script src="{{root}}/profileConfig.js"></script>
+   </div>
+   <script>
+      const vscode = acquireVsCodeApi();
+   </script>
+   <script src="{{root}}/profileConfig.js"></script>
 </body>
 </html>

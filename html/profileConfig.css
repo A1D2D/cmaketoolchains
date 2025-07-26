@@ -1,71 +1,174 @@
 body {
-  margin: 0;
-  font-family: sans-serif;
-  background-color: #1e1e1e;
-  color: #ccc;
+   margin: 0;
+   font-family: sans-serif;
+   background-color: #343434;
+   color: #ccc;
 }
 
 .layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.page-title {
-  margin: 0;
-  padding: 1rem;
-  font-size: 1.5rem;
-  background-color: #2d2d2d;
-  border-bottom: 1px solid #444;
+   display: flex;
+   flex-direction: column;
+   height: 100vh;
 }
 
 .container {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
+   display: flex;
+   flex: 1;
+   overflow: hidden;
+   border: 1px solid #555;
+}
+
+.page-title {
+   margin: 0;
+   padding: 0.4rem;
+   font-size: 1.5rem;
+   background-color: #343434;
 }
 
 .sidebar {
-  width: 240px;
-  background-color: #2d2d2d;
-  padding: 1rem;
-  border-right: 1px solid #444;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
+   width: 240px;
+   background-color: #343434;
+   padding: 0.3rem;
+   border-right: 1px solid #444;
+   display: flex;
+   flex-direction: column;
+   overflow-y: auto;
 }
 
 .main {
-  flex: 1;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
+   flex: 1;
+   padding: 1rem;
+   display: flex;
+   flex-direction: column;
+   overflow-y: auto;
 }
 
 .topnav {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #2d2d2d;
-  border-bottom: 1px solid #444;
-  align-items: center;
+   display: flex;
+   gap: 0.1em;
+   /* space between buttons */
+   justify-content: space-between;
+   /* align to right */
+   margin-bottom: 0.5em;
+   border: 1px solid #555;
 }
 
 .topnav button {
-  background-color: #3a3a3a;
-  border: 1px solid #555;
-  color: #ccc;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 1rem;
+   background-color: #343434;
+   color: #ccc;
+   padding: 0.3rem 1rem;
+   cursor: pointer;
+   transition: background-color 0.2s ease;
+   font-size: 1rem;
 }
 
 .topnav button:hover {
-  background-color: #4a4a4a;
-  color: white;
+   background-color: #4a4a4a;
+   color: white;
 }
 
-/* ... keep the rest of your styles */
+.bottomnav {
+   padding: 0.4rem;
+   font-size: 1.5rem;
+   background-color: #343434;
+   display: flex;
+   justify-content: flex-end;
+   gap: 10px;
+}
+
+.bottomnav button {
+   background-color: #3a3a3a;
+   border: 1px solid #555;
+   color: #ccc;
+   padding: 0.3rem 0.6rem;
+   border-radius: 4px;
+   cursor: pointer;
+   transition: background-color 0.2s ease;
+   font-size: 1rem;
+}
+
+.bottomnav button:hover {
+   background-color: #164f85;
+   color: rgba(193, 226, 255, 0.57);
+}
+
+.field-row {
+   display: grid;
+   grid-template-columns: 120px 1fr auto auto;
+   gap: 0.5em;
+   align-items: center;
+   margin-bottom: 0.5em;
+}
+
+.field-row.full-width {
+   grid-template-columns: 120px 1fr;
+}
+
+.field-row label {
+   text-align: right;
+   padding-right: 8px;
+   white-space: nowrap;
+}
+
+.field-row input[type="text"] {
+   min-width: 0;
+   /* allow shrinking */
+   max-width: 100%;
+   padding: 8px 8px;
+   background-color: #3c3f41;
+   border: 1px solid #555;
+   color: white;
+   border-radius: 3px;
+}
+
+.field-row button {
+   padding: 6px 10px;
+   background-color: #3c3f41;
+   color: #ccc;
+   border: 1px solid #555;
+   border-radius: 3px;
+   cursor: pointer;
+}
+
+#profile-list {
+   width: 100%;
+   height: 100%;
+   /* or set a specific height like 200px */
+   padding: 0.3em;
+   border: 1px solid #555;
+   border-radius: 3px;
+   background-color: #343434;
+   color: #ccc;
+   font-family: inherit;
+   font-size: 1em;
+   overflow-y: auto;
+   /* keeps scrollbar only when needed */
+   box-sizing: border-box;
+}
+
+/* Optional: prettier scrollbars for WebKit (Chrome, Edge, etc.) */
+#profile-list::-webkit-scrollbar {
+   width: 8px;
+}
+
+#profile-list::-webkit-scrollbar-track {
+   background: #2b2b2b;
+}
+
+#profile-list::-webkit-scrollbar-thumb {
+   background-color: #555;
+   border-radius: 4px;
+}
+
+textarea {
+   width: 100%;
+   height: 5em;
+   resize: vertical;
+   padding: 8px;
+   background-color: #3c3f41;
+   border: 1px solid #555;
+   color: white;
+   font-family: monospace;
+   border-radius: 3px;
+   box-sizing: border-box;
+}

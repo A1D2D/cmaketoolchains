@@ -14,7 +14,6 @@ import {
 } from './commands';
 import { initProjectFolder, setContext } from './globals';
 
-
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "cmaketoolchains" is now active!');
 
@@ -32,6 +31,8 @@ export function activate(context: vscode.ExtensionContext) {
 	registerConfigureToolchainsCommand(context);
 	registerConfigureProfilesCommand(context);
 	registerConfigureTargetsCommand(context);
+
+	vscode.commands.executeCommand("cmaketoolchains.syncCMake");
 }
 
 export function deactivate() {}

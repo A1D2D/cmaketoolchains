@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-// import { openToolchainManagerPanel } from '../webview/panels';
 import { Toolchain, context, setToolchains, toolchains } from '../globals';
 import { WebviewPanel, window, ViewColumn} from 'vscode';
 import path from 'path';
@@ -21,7 +20,6 @@ export function registerConfigureToolchainsCommand(context: vscode.ExtensionCont
    pageState.toolchains = toolchains;
 
    const cmd = vscode.commands.registerCommand('cmaketoolchains.configureToolchains', async () => {
-      vscode.window.showInformationMessage('Configure Toolchains: in progress');
       openToolchainManagerPanel("Configure Toolchains");
    });
    context.subscriptions.push(cmd);
@@ -58,6 +56,7 @@ interface Message {
 }
 
 async function messageHandler(message: Message, panel: WebviewPanel): Promise<void> {
+   const config = vscode.workspace.getConfiguration('cmaketoolchains');
    switch (message.command) {
       case 'clientSync':
          pageState = message.data;
@@ -67,10 +66,11 @@ async function messageHandler(message: Message, panel: WebviewPanel): Promise<vo
          break;
       case 'save':
          console.log('save requested');
+         setToolchains(pageState.toolchains);
+         await config.update('cmakeToolchains', toolchains, vscode.ConfigurationTarget.Global);
          break;
       case 'reload':
          console.log('reload requested');
-         const config = vscode.workspace.getConfiguration('cmaketoolchains');
          setToolchains(config.get('cmakeToolchains') || []);
          pageState.toolchains = toolchains;
          sync(panel);
