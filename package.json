@@ -3,6 +3,7 @@
   "displayName": "CMakeToolchains",
   "description": "",
   "version": "0.0.1",
+  "publisher": "a1d2d",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -286,6 +287,6 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "jsonc-parser": "^2.3.1"
+    "jsonc-parser": "^3.3.1"
   }
 }
