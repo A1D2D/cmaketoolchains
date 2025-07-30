@@ -302,7 +302,13 @@ async function parseCMakeFileApiReply(buildDir: string) {
 
 		json = JSON.parse(raw);
 
-		const artifactPaths: string[] = json.artifacts?.map((a: any) => a.path) ?? [];
+		const artifactPaths: string[] = (json.artifacts?.map((a: any) => {
+			let p = a.path;
+			if (!path.isAbsolute(p)) {
+				p = path.join(buildDir, p);
+			}
+			return path.normalize(p);
+		})) ?? [];
 
 		let buildTarget: BuildTargets = {
 			name: target?.name ?? "",
@@ -310,6 +316,7 @@ async function parseCMakeFileApiReply(buildDir: string) {
 		};
 		buildTargets.push(buildTarget);
 	}
+	// console.log(buildTargets);
 	setAvaliableTargets(buildTargets);
 }
 

@@ -8,7 +8,7 @@ export function registerDebugTargetCommand(context: vscode.ExtensionContext) {
       const selectedTarget: string = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedTarget') || '';
 
       debugSelectedTarget(selectedTarget);
-      vscode.window.showInformationMessage('target Debug: in progress');
+      // vscode.window.showInformationMessage('target Debug: in progress');
    });
    context.subscriptions.push(cmd);
 }

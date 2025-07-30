@@ -97,7 +97,7 @@ export async function saveLaunchConfig(newConfig: RunDebugConfig) {
    fs.mkdirSync(path.dirname(launchFilePath), { recursive: true });
    fs.writeFileSync(launchFilePath, updated, 'utf-8');
 
-   vscode.window.showInformationMessage(`Saved config "${newConfig.name}" to launch.json`);
+   // vscode.window.showInformationMessage(`Saved config "${newConfig.name}" to launch.json`);
 }
 
 export async function runSelectedTarget(selectedTarget: string) {

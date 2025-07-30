@@ -9,7 +9,7 @@ export function registerRunTargetCommand(context: vscode.ExtensionContext) {
 
       runSelectedTarget(selectedTarget);
 
-      vscode.window.showInformationMessage('target Run: in progress');
+      // vscode.window.showInformationMessage('target Run: in progress');
    });
    context.subscriptions.push(cmd);
 }

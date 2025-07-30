@@ -15,7 +15,7 @@ export function registerSyncCMakeCommand(context: vscode.ExtensionContext) {
          updateC_CppExtensionCompileCommands(buildPath);
       }
 
-      vscode.window.showInformationMessage('Configuring cmake project Test');
+      // vscode.window.showInformationMessage('Configuring cmake project Test');
    });
    context.subscriptions.push(cmd);
 }
