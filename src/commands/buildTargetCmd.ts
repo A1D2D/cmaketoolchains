@@ -11,7 +11,9 @@ export function registerBuildTargetCommand(context: vscode.ExtensionContext) {
          vscode.window.showErrorMessage('No buildPath or projectPath');
          return;
       }
-      await runCMakeSyncCommand(projectPath);
+      if(vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSyncOnBuild')) {
+         await runCMakeSyncCommand(projectPath);
+      }
       await runCMakeTargetBuild(projectPath, buildPath, selectedTargetName);
       // vscode.window.showInformationMessage('target Build: in progress');
    });

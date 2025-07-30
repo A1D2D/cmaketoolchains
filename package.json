@@ -118,6 +118,11 @@
           "default": "",
           "description": "selected cmake target."
         },
+        "cmaketoolchains.cmakeSyncOnBuild": {
+          "type": "boolean",
+          "default": true,
+          "description": "configure cmake project on every build"
+        },
         "cmaketoolchains.cmakeToolchains": {
           "type": "array",
           "description": "List of CMake Toolchains.",

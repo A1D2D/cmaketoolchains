@@ -7,111 +7,121 @@ import { ExecOptions } from 'child_process';
 import { toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv } from '../globals';
 import { parseLaunchConfig } from './runDebug';
 
-export function runCMakeSyncCommand(projectPath: string) {
-	const config = vscode.workspace.getConfiguration('cmaketoolchains');
-	setProfiles(config.get('cmakeProfiles') || []);
+export async function runCMakeSyncCommand(projectPath: string) {
+	return new Promise<void>((resolve, reject) => {
+		const config = vscode.workspace.getConfiguration('cmaketoolchains');
+		setProfiles(config.get('cmakeProfiles') || []);
 
-	const cmakeSelectedProfile = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedProfile');
-	const profile = profiles.find(p => p.name === cmakeSelectedProfile);
-	if (!profile) {
-		throw new Error("Selected profile not found.");
-	}
-
-	setToolchains(config.get('cmakeToolchains') || []);
-	const toolchain = toolchains.find(tc => tc.name === profile.toolchain);
-
-	if (!toolchain) {
-		throw new Error("Toolchain not found set by the current selected cmake profile.");
-	}
-
-	const output = vscode.window.createOutputChannel('CMake Build Config');
-	output.clear();
-	output.show(true);
-	output.appendLine(`[CMake] Configuring in ${projectPath}...`);
-
-	let buildDir: string | null = extractBuildPath(profile.cmakeOptions);
-
-	if(!buildDir) {
-		buildDir = profile.buildDirectory ? profile.buildDirectory : (profile.buildType ? `build-${profile.buildType.toLowerCase()}` : 'build');
-	}
-
-	setBuildPath(resolvePath(buildDir));
-
-	const cmakeExecutable = toolchain.cmake || 'cmake';
-
-	const buildType = profile.buildType ? `-DCMAKE_BUILD_TYPE=${profile.buildType}` : '';
-	const buildTool = toolchain.buildTool ? `-DCMAKE_MAKE_PROGRAM=${toolchain.buildTool}` : '';
-	const cCompiler = toolchain.ccompiler ? `-DCMAKE_C_COMPILER=${toolchain.ccompiler}` : '';
-	const cppCompiler = toolchain.cppcompiler ? `-DCMAKE_CXX_COMPILER=${toolchain.cppcompiler}` : '';
-	
-	const buildToolType = toolchain.buildTool ? detectGeneratorFromBuildTool(toolchain.buildTool) : '';
-	const generatorValue = profile.generator || buildToolType;
-	const generator = generatorValue ? `-G "${generatorValue}"` : '';
-
-	const sourceFlag = '-S .';
-	const buildFlag = `-B ${buildPath}`;
-
-	const cmakeOpStr = formatFlagList(profile.cmakeOptions);
-
-	const cmakeCmd = [
-		cmakeExecutable,
-		cmakeOpStr.includes('-DCMAKE_BUILD_TYPE')   ? '' : buildType,
-		cmakeOpStr.includes('-DCMAKE_MAKE_PROGRAM') ? '' : buildTool,
-		cmakeOpStr.includes('-DCMAKE_C_COMPILER')   ? '' : cCompiler,
-		cmakeOpStr.includes('-DCMAKE_CXX_COMPILER') ? '' : cppCompiler,
-		cmakeOpStr.includes('-G')                   ? '' : generator,
-		cmakeOpStr.includes('-S')                   ? '' : sourceFlag,
-		cmakeOpStr.includes('-B')                   ? '' : buildFlag,
-		cmakeOpStr,
-		'-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'
-	].filter(Boolean).join(' ');
-
-	const options: ExecOptions = {
-		cwd: projectPath,
-		env: {
-			...process.env,
-			...(profile.environment ?? {}),
-			PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+		const cmakeSelectedProfile = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedProfile');
+		const profile = profiles.find(p => p.name === cmakeSelectedProfile);
+		if (!profile) {
+			vscode.window.showErrorMessage("Selected profile not found.");
+			reject(new Error("Selected profile not found."));
+			return;
 		}
-	};
 
-	if(!buildPath) {
-		vscode.window.showErrorMessage("Build path undefined.");
-		return;
-	}
+		setToolchains(config.get('cmakeToolchains') || []);
+		const toolchain = toolchains.find(tc => tc.name === profile.toolchain);
 
-	output.appendLine(`creating V1 Query files in build directory: ${buildPath}`);
-	output.appendLine(`executed cmake command: ${cmakeCmd}`);
+		if (!toolchain) {
+			vscode.window.showErrorMessage("Toolchain not found set by the current selected cmake profile.");
+			reject(new Error("Toolchain not found set by the current selected cmake profile."));
+			return;
+		}
 
-	createCodeModelV1Query(buildPath);
-	const child = cp.exec(cmakeCmd, options);
+		const output = vscode.window.createOutputChannel('CMake Build Config');
+		output.clear();
+		output.show(true);
+		output.appendLine(`[CMake] Configuring in ${projectPath}...`);
 
-	if (!child) {
-		output.appendLine('[Error] Failed to start CMake process.');
-		return;
-	}
+		let buildDir: string | null = extractBuildPath(profile.cmakeOptions);
 
-	child.stdout?.on('data', (data: Buffer) => {
-		output.append(data.toString());
-	});
+		if(!buildDir) {
+			buildDir = profile.buildDirectory ? profile.buildDirectory : (profile.buildType ? `build-${profile.buildType.toLowerCase()}` : 'build');
+		}
 
-	child.stderr?.on('data', (data: Buffer) => {
-		output.append(data.toString());
-	});
+		setBuildPath(resolvePath(buildDir));
 
-	child.on('close', (code: number | null) => {
-		if (code !== 0) {
-			output.appendLine(`[Error] CMake exited with code ${code}`);
-		} else {
-			output.appendLine('[Info] CMake finished successfully.');
-			if(!buildPath) {
-				vscode.window.showErrorMessage("Build path undefined.");
-				return;
+		const cmakeExecutable = toolchain.cmake || 'cmake';
+
+		const buildType = profile.buildType ? `-DCMAKE_BUILD_TYPE=${profile.buildType}` : '';
+		const buildTool = toolchain.buildTool ? `-DCMAKE_MAKE_PROGRAM=${toolchain.buildTool}` : '';
+		const cCompiler = toolchain.ccompiler ? `-DCMAKE_C_COMPILER=${toolchain.ccompiler}` : '';
+		const cppCompiler = toolchain.cppcompiler ? `-DCMAKE_CXX_COMPILER=${toolchain.cppcompiler}` : '';
+		
+		const buildToolType = toolchain.buildTool ? detectGeneratorFromBuildTool(toolchain.buildTool) : '';
+		const generatorValue = profile.generator || buildToolType;
+		const generator = generatorValue ? `-G "${generatorValue}"` : '';
+
+		const sourceFlag = '-S .';
+		const buildFlag = `-B ${buildPath}`;
+
+		const cmakeOpStr = formatFlagList(profile.cmakeOptions);
+
+		const cmakeCmd = [
+			cmakeExecutable,
+			cmakeOpStr.includes('-DCMAKE_BUILD_TYPE')   ? '' : buildType,
+			cmakeOpStr.includes('-DCMAKE_MAKE_PROGRAM') ? '' : buildTool,
+			cmakeOpStr.includes('-DCMAKE_C_COMPILER')   ? '' : cCompiler,
+			cmakeOpStr.includes('-DCMAKE_CXX_COMPILER') ? '' : cppCompiler,
+			cmakeOpStr.includes('-G')                   ? '' : generator,
+			cmakeOpStr.includes('-S')                   ? '' : sourceFlag,
+			cmakeOpStr.includes('-B')                   ? '' : buildFlag,
+			cmakeOpStr,
+			'-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'
+		].filter(Boolean).join(' ');
+
+		const options: ExecOptions = {
+			cwd: projectPath,
+			env: {
+				...process.env,
+				...(profile.environment ?? {}),
+				PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
 			}
-			output.appendLine("parse file API");
-			parseCMakeFileApiReply(buildPath);
-			getCMakeCompilerInfo(buildPath);
+		};
+
+		if(!buildPath) {
+			vscode.window.showErrorMessage("Build path undefined.");
+			reject(new Error("[Error] Build path undefined."));
+			return;
 		}
+
+		output.appendLine(`creating V1 Query files in build directory: ${buildPath}`);
+		output.appendLine(`executed cmake command: ${cmakeCmd}`);
+
+		createCodeModelV1Query(buildPath);
+		const child = cp.exec(cmakeCmd, options);
+
+		if (!child) {
+			output.appendLine('[Error] Failed to start CMake process.');
+			reject(new Error("[Error] Failed to start CMake process."));
+			return;
+		}
+
+		child.stdout?.on('data', (data: Buffer) => {
+			output.append(data.toString());
+		});
+
+		child.stderr?.on('data', (data: Buffer) => {
+			output.append(data.toString());
+		});
+
+		child.on('close', (code: number | null) => {
+			if (code !== 0) {
+				output.appendLine(`[Error] CMake exited with code ${code}`);
+			} else {
+				output.appendLine('[Info] CMake finished successfully.');
+				if(!buildPath) {
+					vscode.window.showErrorMessage("Build path undefined.");
+					reject(new Error("Build path undefined."));
+					return;
+				}
+				output.appendLine("parse file API");
+				parseCMakeFileApiReply(buildPath);
+				getCMakeCompilerInfo(buildPath);
+				resolve();
+			}
+		});
 	});
 }
 
