@@ -224,6 +224,12 @@
               "configSection": "C_Cpp",
               "configKey": "default.compileCommands",
               "enabled": true
+            },
+            {
+              "extension": "llvm-vs-code-extensions.vscode-clangd",
+              "configSection": "clangd",
+              "configKey": "arguments",
+              "enabled": true
             }
           ],
           "description": "Configure which extensions should have their compile commands updated",
