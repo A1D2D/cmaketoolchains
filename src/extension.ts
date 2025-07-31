@@ -10,7 +10,8 @@ import {
 	registerConfigureToolchainsCommand,
 	registerConfigureProfilesCommand,
 	registerConfigureTargetsCommand, 
-	registerDebugTargetCommand
+	registerDebugTargetCommand,
+	registerCompileCommandsCommand
 } from './commands';
 import { initProjectFolder, setContext } from './globals';
 
@@ -31,8 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
 	registerConfigureToolchainsCommand(context);
 	registerConfigureProfilesCommand(context);
 	registerConfigureTargetsCommand(context);
+	registerCompileCommandsCommand(context);
 
 	vscode.commands.executeCommand("cmaketoolchains.syncCMake");
 }
-
-export function deactivate() {}

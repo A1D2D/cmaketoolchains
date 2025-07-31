@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { runCMakeSyncCommand, updateC_CppExtensionCompileCommands } from '../cmakeTools';
+import { runCMakeSyncCommand, updateCompileCommands } from '../cmakeTools';
 import { buildPath, projectPath } from '../globals';
 
 export function registerSyncCMakeCommand(context: vscode.ExtensionContext) {
@@ -12,7 +11,7 @@ export function registerSyncCMakeCommand(context: vscode.ExtensionContext) {
 
       runCMakeSyncCommand(projectPath);
       if(buildPath) {
-         updateC_CppExtensionCompileCommands(buildPath);
+         updateCompileCommands(buildPath);
       }
 
       // vscode.window.showInformationMessage('Configuring cmake project Test');

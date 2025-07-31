@@ -71,6 +71,11 @@
         "command": "cmaketoolchains.configureTargets",
         "title": "Configure Targets",
         "category": "CMake Toolchains"
+      },
+      {
+        "command": "cmaketoolchains.showCompileCommandStatus",
+        "title": "Show Compile Commands Status",
+        "category": "CMake Toolchains"
       }
     ],
     "menus": {
@@ -210,7 +215,51 @@
             }
           }
         },
-        "cmaketoolchains.cmakeTargets": {}
+        "cmaketoolchains.cmakeTargets": {},
+        "cmaketoolchains.compileCommandTargets": {
+          "type": "array",
+          "default": [
+            {
+              "extension": "ms-vscode.cpptools",
+              "configSection": "C_Cpp",
+              "configKey": "default.compileCommands",
+              "enabled": true
+            }
+          ],
+          "description": "Configure which extensions should have their compile commands updated",
+          "items": {
+            "type": "object",
+            "properties": {
+              "extension": {
+                "type": "string",
+                "description": "Extension ID (e.g., 'ms-vscode.cpptools')"
+              },
+              "configSection": {
+                "type": "string",
+                "description": "Configuration section name (e.g., 'C_Cpp')"
+              },
+              "configKey": {
+                "type": "string",
+                "description": "Configuration key to update (e.g., 'default.compileCommands')"
+              },
+              "enabled": {
+                "type": "boolean",
+                "description": "Whether this target is enabled"
+              }
+            },
+            "required": ["extension", "configSection", "configKey", "enabled"]
+          }
+        },
+        "cmaketoolchains.autoDetectExtensions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect and configure available C/C++ language server extensions"
+        },
+        "cmaketoolchains.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications when compile commands are updated"
+        }
       }
     },
     "debuggers": [

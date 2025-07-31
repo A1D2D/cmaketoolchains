@@ -4,8 +4,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExecOptions } from 'child_process';
 
-import { toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv } from '../globals';
+import {context, toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv } from '../globals';
 import { parseLaunchConfig } from './runDebug';
+import * as cc from './compileCommands';
 
 export async function runCMakeSyncCommand(projectPath: string) {
 	return new Promise<void>((resolve, reject) => {
@@ -200,9 +201,16 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 	});
 }
 
-export async function updateC_CppExtensionCompileCommands(buildDir: string) {
-	const config = vscode.workspace.getConfiguration('C_Cpp');
-	await config.update('default.compileCommands', path.join(buildDir, 'compile_commands.json'), vscode.ConfigurationTarget.Workspace);
+export async function updateCompileCommands(buildDir: string) {
+	// const compileCommandsPath = path.join(buildDir, 'compile_commands.json');
+	if(!context) {
+		console.log('default fallback');
+		await cc.updateCompileCommandsEx(buildDir);
+		return;
+	}
+	console.log('use custom');
+	const manager = new cc.CompileCommandsManager(context);
+	await manager.updateCompileCommands(buildDir);
 }
 
 function detectGeneratorFromBuildTool(buildToolPathOrName: string) {
