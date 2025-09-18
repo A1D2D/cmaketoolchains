@@ -2,10 +2,10 @@
   "name": "cmaketoolchains",
   "displayName": "CMakeToolchains",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "a1d2d",
   "engines": {
-    "vscode": "^1.102.0"
+    "vscode": "^1.50.0"
   },
   "categories": [
     "Other"
@@ -82,31 +82,38 @@
       "editor/title": [
         {
           "command": "cmaketoolchains.selectProfile",
-          "group": "navigation@1"
+          "group": "navigation@1",
+          "when": "isCmakeProject"
         },
         {
           "command": "cmaketoolchains.selectTarget",
-          "group": "navigation@2"
+          "group": "navigation@2",
+          "when": "isCmakeProject"
         },
         {
           "command": "cmaketoolchains.buildTarget",
-          "group": "navigation@3"
+          "group": "navigation@3",
+          "when": "isCmakeProject"
         },
         {
           "command": "cmaketoolchains.runTarget",
-          "group": "navigation@4"
+          "group": "navigation@4",
+          "when": "isCmakeProject"
         },
         {
           "command": "cmaketoolchains.debugTarget",
-          "group": "navigation@5"
+          "group": "navigation@5",
+          "when": "isCmakeProject"
         },
         {
           "command": "cmaketoolchains.configureSettings",
-          "group": "navigation@6"
+          "group": "navigation@6",
+          "when": "isCmakeProject"
         },
         {
           "command": "cmaketoolchains.syncCMake",
-          "group": "navigation@7"
+          "group": "navigation@7",
+          "when": "isCmakeProject"
         }
       ]
     },

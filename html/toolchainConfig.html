@@ -27,16 +27,20 @@
                <form id="toolchain-form">
                   <div class="field-row">
                      <label for="name">Name:</label>
-                     <input type="text" id="name" list="name" placeholder="Enter name..." style="width: 100%;" />
+                     <input type="text" id="name" list="name-options" placeholder="Enter name..." style="width: 100%;" />
+                     <datalist id="name-options">
+                        <option value="Mingw-Clang">
+                        <option value="Mingw-GCC">
+                        <option value="clang-Cl">
+                        <option value="CL">
+                        <option value="GNU">
+                     </datalist>
                   </div>
 
                   <div class="field-row">
                      <label for="toolsetFolder">Toolset Folder:</label>
                      <input type="text" id="toolsetFolder" list="toolset-options" placeholder="Enter or choose path..." />
                      <datalist id="toolset-options">
-                        <option value="IDK">
-                        <option value="IDK2">
-                        <option value="IDK3">
                      </datalist>
                      <button type="button" onclick="openFolderPicker('toolsetFolder')">📁</button>
                      <button type="button">🔍</button>
@@ -46,9 +50,7 @@
                      <label for="cmakePath">Cmake:</label>
                      <input type="text" id="cmakePath" list="cmake-options" placeholder="Enter or choose path..." />
                      <datalist id="cmake-options">
-                        <option value="IDK">
-                        <option value="IDK2">
-                        <option value="IDK3">
+                        <option value="cmake">
                      </datalist>
                      <button type="button" onclick="openFilePicker('cmakePath')">📁</button>
                      <button type="button">🔍</button>
@@ -58,9 +60,8 @@
                      <label for="buildToolPath">Build Tool:</label>
                      <input type="text" id="buildToolPath" list="buildTool-options" placeholder="Enter or choose path..." />
                      <datalist id="buildTool-options">
-                        <option value="IDK">
-                        <option value="IDK2">
-                        <option value="IDK3">
+                        <option value="ninja">
+                        <option value="make">
                      </datalist>
                      <button type="button" onclick="openFilePicker('buildToolPath')">📁</button>
                      <button type="button">🔍</button>
@@ -70,9 +71,10 @@
                      <label for="cCompilerPath">C Compiler:</label>
                      <input type="text" id="cCompilerPath" list="cCompiler-options" placeholder="Enter or choose path..." />
                      <datalist id="cCompiler-options">
-                        <option value="IDK">
-                        <option value="IDK2">
-                        <option value="IDK3">
+                        <option value="gcc">
+                        <option value="clang">
+                        <option value="cl">
+                        <option value="clang-cl">
                      </datalist>
                      <button type="button" onclick="openFilePicker('cCompilerPath')">📁</button>
                      <button type="button">🔍</button>
@@ -82,9 +84,10 @@
                      <label for="cppCompilerPath">C++ Compiler:</label>
                      <input type="text" id="cppCompilerPath" list="cppCompiler-options" placeholder="Enter or choose path..." />
                      <datalist id="cppCompiler-options">
-                        <option value="IDK">
-                        <option value="IDK2">
-                        <option value="IDK3">
+                        <option value="g++">
+                        <option value="clang++">
+                        <option value="cl">
+                        <option value="clang-cl">
                      </datalist>
                      <button type="button" onclick="openFilePicker('cppCompilerPath')">📁</button>
                      <button type="button">🔍</button>
@@ -94,9 +97,9 @@
                      <label for="debuggerPath">Debugger:</label>
                      <input type="text" id="debuggerPath" list="debugger-options" placeholder="Enter or choose path..." />
                      <datalist id="debugger-options">
-                        <option value="IDK">
-                        <option value="IDK2">
-                        <option value="IDK3">
+                        <option value="gdb">
+                        <option value="vsdbg">
+                        <option value="lldb">
                      </datalist>
                      <button type="button" onclick="openFilePicker('debuggerPath')">📁</button>
                      <button type="button">🔍</button>

@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExecOptions } from 'child_process';
 
-import {context, toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv } from '../globals';
+import {context, toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv, setIsCMakeProject, getIsCMakeProject } from '../globals';
 import { parseLaunchConfig } from './runDebug';
 import * as cc from './compileCommands';
 
@@ -13,12 +13,15 @@ export async function runCMakeSyncCommand(projectPath: string) {
 		const config = vscode.workspace.getConfiguration('cmaketoolchains');
 		setProfiles(config.get('cmakeProfiles') || []);
 
+		if(!getIsCMakeProject()) {
+			return reject(new Error("Project is not a cmake project."));
+		}
+
 		const cmakeSelectedProfile = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedProfile');
 		const profile = profiles.find(p => p.name === cmakeSelectedProfile);
 		if (!profile) {
 			vscode.window.showErrorMessage("Selected profile not found.");
-			reject(new Error("Selected profile not found."));
-			return;
+			return reject(new Error("Selected profile not found."));
 		}
 
 		setToolchains(config.get('cmakeToolchains') || []);
@@ -154,11 +157,12 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 
 		const buildOptions = formatFlagList(profile.buildOptions);
 
+		const cmakeExecutable = toolchain.cmake || 'cmake';
 		const buildDirFlag = `--build "${buildDirPath}"`;
 		const buildTargetFlag = `--target "${buildTarget}"`;
 
 		const cmakeCmd = [
-			'cmake',
+			`${cmakeExecutable}`,
 			`${buildOptions.includes("--build") ? '' : buildDirFlag}`,
 			`${buildOptions.includes("--target") ? '' : buildTargetFlag}`,
 			`${buildOptions}`
@@ -353,4 +357,15 @@ function getCMakeCompilerInfo(buildDir: string) {
 		compilerId: compilerId, 
 		compilerPath: compilerPath
 	});
+}
+
+export async function isCMakeProject(): Promise<boolean> {
+	const cmakelists = await vscode.workspace.findFiles("**/[cC][mM][aA][kK][eE][lL][iI][sS][tT][sS].[tT][xX][tT]", "**/node_modules/**", 1);
+	const presets = await vscode.workspace.findFiles("**/[cC][mM][aA][kK][eE][pP][rR][eE][sS][eE][tT][sS].[jJ][sS][oO][nN]", "**/node_modules/**", 1);
+	return cmakelists.length > 0 || presets.length > 0;;
+}
+
+export async function updateContext() {
+	setIsCMakeProject(await isCMakeProject());
+	vscode.commands.executeCommand("setContext", "isCmakeProject", getIsCMakeProject());
 }

@@ -59,6 +59,8 @@ export let avaliableTargets: BuildTargets[] | null = null;
 
 export let context: vscode.ExtensionContext | null = null;
 
+export let isCmakeProject: boolean = false; 
+
 export function setToolchains(newToolchains: Toolchain[]) {
    toolchains = newToolchains; // Set new toolchains
 }
@@ -87,6 +89,10 @@ export function setBuildToolEnv(newBuildToolEnv: BuildToolEnv) {
    buildToolEnv = newBuildToolEnv;
 }
 
+export function setIsCMakeProject(newIsCmakeProject: boolean) {
+   isCmakeProject = newIsCmakeProject;
+}
+
 export function getToolchains() {
    return toolchains;
 }
@@ -101,6 +107,10 @@ export function getCurrentProfile() {
 
 export function getAvaliableTargets() {
    return avaliableTargets;
+}
+
+export function getIsCMakeProject() {
+   return isCmakeProject;
 }
 
 export function initProjectFolder() {

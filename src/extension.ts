@@ -14,9 +14,12 @@ import {
 	registerCompileCommandsCommand
 } from './commands';
 import { initProjectFolder, setContext } from './globals';
+import { isCMakeProject, updateContext } from './cmakeTools/utilities';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "cmaketoolchains" is now active!');
+
+	updateContext();
 
 	initProjectFolder();
 
@@ -34,5 +37,14 @@ export function activate(context: vscode.ExtensionContext) {
 	registerConfigureTargetsCommand(context);
 	registerCompileCommandsCommand(context);
 
-	vscode.commands.executeCommand("cmaketoolchains.syncCMake");
+	context.subscriptions.push(
+		vscode.workspace.onDidCreateFiles(updateContext),
+		vscode.workspace.onDidDeleteFiles(updateContext),
+		vscode.workspace.onDidRenameFiles(updateContext),
+		vscode.workspace.onDidChangeWorkspaceFolders(updateContext)
+	);
+
+	if(await isCMakeProject()) {
+		vscode.commands.executeCommand("cmaketoolchains.syncCMake");
+	}
 }

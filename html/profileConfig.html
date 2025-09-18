@@ -27,7 +27,17 @@
                <form id="profile-form">
                   <div class="field-row full-width">
                      <label for="name">Name:</label>
-                     <input type="text" id="name" list="name" placeholder="Enter name..."/>
+                     <input type="text" id="name" list="name-options" placeholder="Enter name..."/>
+                     <datalist id="name-options">
+                        <option value="Debug">
+                        <option value="Release">
+                        <option value="Clang-Debug">
+                        <option value="Clang-Release">
+                        <option value="GNU-Debug">
+                        <option value="GNU-Release">
+                        <option value="MSVC-Debug">
+                        <option value="MSVC-Release">
+                     </datalist>
                   </div>
 
                   <div class="field-row full-width">
@@ -45,9 +55,11 @@
                      <label for="toolchain">Toolchain:</label>
                      <input type="text" id="toolchain" list="toolchain-options" placeholder="Pick Toolchain..." />
                      <datalist id="toolchain-options">
-                        <option value="Toolchian1">
-                        <option value="Toolchian2">
-                        <option value="Toolchian3">
+                        <option value="Mingw-Clang">
+                        <option value="Mingw-GCC">
+                        <option value="clang-Cl">
+                        <option value="CL">
+                        <option value="GNU">
                      </datalist>
                      <button type="button">🔍</button>
                   </div>
@@ -73,6 +85,10 @@
                         placeholder="Enter or choose path..." />
                      <datalist id="buildDirectory-options">
                         <option value="build">
+                        <option value="build/debug">
+                        <option value="build/release">
+                        <option value="build/relwithdebinfo">
+                        <option value="build/minsizerel">
                      </datalist>
                      <button type="button" onclick="openFolderPicker('buildDirectory')">📁</button>
                      <button type="button">🔍</button>
