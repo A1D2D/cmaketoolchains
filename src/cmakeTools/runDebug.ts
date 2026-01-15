@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
-import { avaliableTargets, buildToolEnv, BuildToolEnv, Profile, profiles, projectPath, runConfigs, RunDebugConfig, setProfiles, setRunConfigs, setToolchains, Toolchain, toolchains } from '../globals';
+import { avaliableTargets, buildToolEnv, BuildToolEnv, Profile, profiles, projectPath, runConfigs, RawGdbCommand, DebugSetupCommand, RunDebugConfig, setProfiles, setRunConfigs, setToolchains, Toolchain, toolchains } from '../globals';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as cp from 'child_process';
 
 import * as jsonc from 'jsonc-parser';
+import { buildSetupCommands } from './utilities';
 
 export function parseLaunchConfig(): RunDebugConfig[] {
    if (!projectPath) {
@@ -39,6 +40,7 @@ export function parseLaunchConfig(): RunDebugConfig[] {
          target: entry.target,
          executable: entry.executable,
          programArgs: entry.programArgs ?? undefined,
+         setupCommands: entry.setupCommands ?? {prettyPrinting: true},
          workDir: entry.workDir ?? undefined,
          environment: entry.environment ?? undefined,
          runAdmin: entry.runAdmin ?? false,
@@ -72,6 +74,7 @@ export async function saveLaunchConfig(newConfig: RunDebugConfig) {
       target: newConfig.target,
       executable: newConfig.executable,
       programArgs: newConfig.programArgs,
+      setupCommands: newConfig.setupCommands ?? {prettyPrinting: true},
       workDir: newConfig.workDir,
       environment: newConfig.environment,
       runAdmin: newConfig.runAdmin ?? false,
@@ -132,6 +135,7 @@ export async function runSelectedTarget(selectedTarget: string) {
       target: `${selectedTarget}`,
       executable: `${selectedTarget}`,
       programArgs: [],
+      setupCommands: {prettyPrinting: true},
       workDir: `${path.dirname(exePath)}`,
       runAdmin: false,
       runExternal: false
@@ -144,6 +148,7 @@ export async function runSelectedTarget(selectedTarget: string) {
       target: targetConfig.target ?? defaults.target,
       executable: targetConfig.executable ?? defaults.executable,
       programArgs: targetConfig.programArgs ?? defaults.programArgs,
+      setupCommands: targetConfig.setupCommands ?? defaults.setupCommands,
       workDir: targetConfig.workDir ?? defaults.workDir,
       runAdmin: targetConfig.runAdmin ?? defaults.runAdmin,
       runExternal: targetConfig.runExternal ?? defaults.runExternal,
@@ -188,6 +193,7 @@ export async function debugSelectedTarget(selectedTarget: string) {
       target: `${selectedTarget}`,
       executable: `${selectedTarget}`,
       programArgs: [],
+      setupCommands: {prettyPrinting: true},
       workDir: `${path.dirname(exePath)}`,
       runAdmin: false,
       runExternal: false
@@ -200,6 +206,7 @@ export async function debugSelectedTarget(selectedTarget: string) {
       target: targetConfig.target ?? defaults.target,
       executable: targetConfig.executable ?? defaults.executable,
       programArgs: targetConfig.programArgs ?? defaults.programArgs,
+      setupCommands: targetConfig.setupCommands ?? defaults.setupCommands,
       workDir: targetConfig.workDir ?? defaults.workDir,
       runAdmin: targetConfig.runAdmin ?? defaults.runAdmin,
       runExternal: targetConfig.runExternal ?? defaults.runExternal,
@@ -274,9 +281,12 @@ async function debugSomewhere(exePath: string, config: RunDebugConfig, profile: 
       name, value: String(value)
    }));
 
+   const isMSVC = buildToolEnv?.compilerId === "MSVC";
+   const isGdb = !isMSVC && process.platform === "win32";
+
    const dbgConfig: vscode.DebugConfiguration = {
       name: `Debug ${config.name}`,
-      type: `${buildToolEnv?.compilerId === 'MSVC' ? 'cppvsdbg' : 'cppdbg'}`,
+      type: isMSVC ? "cppvsdbg" : "cppdbg",
       request: 'launch',
       program: exePath,
       args: config.programArgs?.join(' '),
@@ -284,8 +294,9 @@ async function debugSomewhere(exePath: string, config: RunDebugConfig, profile: 
       stopAtEntry: false,
       console: 'externalTerminal',
       runInExternalConsole: config.runExternal,
-      MIMode: `${buildToolEnv?.compilerId === 'MSVC' ? 'cppvsdbg' : (process.platform === 'win32' ? 'gdb' : 'lldb')}`,
-      environment: environmentArray
+      MIMode: isMSVC ? "cppvsdbg" : (isGdb ? "gdb" : "lldb"),
+      environment: environmentArray,
+      setupCommands: buildSetupCommands(config.setupCommands, isGdb)
    };
 
    const folder = vscode.workspace.workspaceFolders?.[0];

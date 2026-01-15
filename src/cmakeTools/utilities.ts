@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExecOptions } from 'child_process';
 
-import {context, toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv, setIsCMakeProject, getIsCMakeProject } from '../globals';
+import {context, toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv, setIsCMakeProject, getIsCMakeProject, DebugSetupCommand, RawGdbCommand } from '../globals';
 import { parseLaunchConfig } from './runDebug';
 import * as cc from './compileCommands';
 
@@ -368,4 +368,33 @@ export async function isCMakeProject(): Promise<boolean> {
 export async function updateContext() {
 	setIsCMakeProject(await isCMakeProject());
 	vscode.commands.executeCommand("setContext", "isCmakeProject", getIsCMakeProject());
+}
+
+export function buildSetupCommands(cfg?: DebugSetupCommand, isGdb: boolean = true): RawGdbCommand[] {
+   const cmds: RawGdbCommand[] = [];
+
+   if (!cfg) {
+		return cmds;
+	}
+
+   if (cfg.prettyPrinting && isGdb) {
+      cmds.push({
+         text: "-enable-pretty-printing",
+         ignoreFailures: true
+      });
+   }
+
+   if (cfg.disableASLR) {
+      cmds.push({
+         text: isGdb
+            ? "interpreter-exec console \"set disable-randomization on\""
+            : "settings set target.disable-aslr true"
+      });
+   }
+
+   if (cfg.rawCommands?.length) {
+      cmds.push(...cfg.rawCommands);
+   }
+
+   return cmds;
 }

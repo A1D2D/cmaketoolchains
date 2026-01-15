@@ -27,11 +27,25 @@ interface BuildTargets {
    artifacts: string[] | null;
 }
 
+interface RawGdbCommand {
+   text: string;
+   description?: string;
+   ignoreFailures?: boolean;
+}
+
+interface DebugSetupCommand {
+   prettyPrinting?: boolean;
+   disableASLR?: boolean;
+
+   rawCommands?: RawGdbCommand[];
+}
+
 interface RunDebugConfig {
    name: string;
    target: string;
    executable: string;
    programArgs?: string[];
+   setupCommands?: DebugSetupCommand;
    workDir?: string;
    environment?: { [key: string]: string };
    runAdmin: boolean;
@@ -130,4 +144,4 @@ export function resolvePath(p: string): string | null {
    return path.isAbsolute(p) ? p : path.join(projectPath, p);
 }
 
-export { BuildTargets, RunDebugConfig, BuildToolEnv, Toolchain, Profile};
+export { BuildTargets, RawGdbCommand, DebugSetupCommand, RunDebugConfig, BuildToolEnv, Toolchain, Profile};

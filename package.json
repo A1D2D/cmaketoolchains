@@ -304,6 +304,46 @@
                 },
                 "description": "programArgs"
               },
+              "setupCommands": {
+                "type": "object",
+                "description": "Debugger setup options (compiled into debugger-specific setup commands)",
+                "properties": {
+                  "prettyPrinting": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable debugger pretty printing (GDB only, no-op on others)"
+                  },
+                  "disableASLR": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Disable address space layout randomization"
+                  },
+                  "rawCommands": {
+                    "type": "array",
+                    "description": "Advanced: raw debugger commands (GDB/LLDB only)",
+                    "items": {
+                      "type": "object",
+                      "required": ["text"],
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "description": "Debugger command (MI or console)"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "Optional description for the command"
+                        },
+                        "ignoreFailures": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Ignore command failure and continue debugging"
+                        }
+                      }
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
               "workDir": {
                 "type": "string",
                 "description": "workDir"
