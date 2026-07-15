@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8" />
+   <title>Manage Targets</title>
+   <link rel="stylesheet" href="{{root}}/targetConfig.css" />
+</head>
+
+<body>
+   <div class="layout">
+      <h1 class="page-title">Targets</h1>
+
+      <div class="container">
+         <div class="sidebar">
+            <div class="topnav">
+               <button id="add" title="Add">+</button>
+               <button id="remove" title="Remove">–</button>
+               <button id="duplicate" title="Duplicate">⧉</button>
+               <button id="down" title="Down">˅</button>
+               <button id="up" title="Up">˄</button>
+            </div>
+            <label for="target-list"></label><select id="target-list" size="10"></select>
+         </div>
+         <div class="main">
+            <div id="editor">
+               <form id="target-form">
+                  <div class="field-row full-width">
+                     <label for="name">Name:</label>
+                     <input type="text" id="name" list="name-options" placeholder="Enter name..."/>
+                     <datalist id="name-options">
+                        <option value="Main">
+                        <option value="Test">
+                     </datalist>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="target">Target:</label>
+                     <input type="text" id="target" list="target-options" placeholder="Enter target..." />
+                     <datalist id="target-options">
+                        <option value="all">
+                     </datalist>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="executable">Executable:</label>
+                     <input type="text" id="executable" list="executable-options" placeholder="Enter executable..." />
+                     <datalist id="executable-options">
+                     </datalist>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="programArgs">Program Args:</label>
+                     <textarea id="programArgs" placeholder="<args>"></textarea>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="debugSetupCommands">Debug Setup Commands:</label>
+                     <div class="setup-commands">
+                        <div class="flags-section">
+                           <label for="flag-lable">Flags:</label>
+                           <div class="flag-list">
+                              <label class="pretty-printing-checkbox">
+                                 <input type="checkbox">
+                                 <span>Pretty Printing</span>
+                              </label>
+                              <label class="disable-aslr-checkbox">
+                                 <input type="checkbox">
+                                 <span>Disable ASLR</span>
+                              </label>
+                           </div>
+                        </div>
+
+                        <div class="commands-section">
+                           <label for="commands-lable">Raw GDB Commands:</label>
+                           <button type="button" class="add-command" id="add-command">+ Add Command</button>
+                        </div>
+                        <div class="command-list">
+                        </div>
+                     </div>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="workDir">workDir:</label>
+                     <input type="text" id="workDir" list="workDir-options" placeholder="Enter workDir..."/>
+                     <datalist id="workDir-options">
+                     </datalist>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="environment">Environment:</label>
+                     <textarea id="environment" placeholder="KEY=value per line"></textarea>
+                  </div>
+
+                  <div class="field-row full-width">
+                     <label for="settings">Setting Flags:</label>
+                     <div class="flag-list">
+                        <label class="runAdminLable">
+                           <input type="checkbox" id="runAdmin">
+                           <span>Run Admin</span>
+                        </label>
+                        <label class="runExternalLable">
+                           <input type="checkbox" id="runExternal">
+                           <span>Run External</span>
+                        </label>
+                     </div>
+                  </div>
+               </form>
+            </div>
+         </div>
+      </div>
+      <div class="bottomnav">
+         <button id="reload" title="Reload">Reload</button>
+         <button id="save" title="Save">Save</button>
+      </div>
+   </div>
+   <script>
+      const vscode = acquireVsCodeApi();
+   </script>
+   <script src="{{root}}/targetConfig.js"></script>
+</body>
+</html>

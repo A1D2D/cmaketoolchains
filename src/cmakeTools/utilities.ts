@@ -4,8 +4,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ExecOptions } from 'child_process';
 
-import {context, toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv, setIsCMakeProject, getIsCMakeProject, DebugSetupCommand, RawGdbCommand } from '../globals';
-import { parseLaunchConfig } from './runDebug';
+import {context, toolchains, profiles, buildPath, setToolchains, setProfiles, setBuildPath, BuildTargets, setAvaliableTargets, resolvePath, setRunConfigs, runConfigs, setBuildToolEnv, setIsCMakeProject, getIsCMakeProject, DebugSetupCommand, RawGdbCommand, terminalMrg } from '../globals';
+import { parseLaunchConfig } from './launchConfigManager';
 import * as cc from './compileCommands';
 
 export async function runCMakeSyncCommand(projectPath: string) {
@@ -33,10 +33,15 @@ export async function runCMakeSyncCommand(projectPath: string) {
 			return;
 		}
 
-		const output = vscode.window.createOutputChannel('CMake Build Config');
-		output.clear();
-		output.show(true);
-		output.appendLine(`[CMake] Configuring in ${projectPath}...`);
+		if(!terminalMrg) {
+			reject(new Error("Failed to inicialize terminals."));
+			return;
+		}
+
+		const syncTerminal = terminalMrg.getSyncTerminal();
+		syncTerminal.clear();
+		syncTerminal.show(true);
+		syncTerminal.writeInfo(`[CMake] Configuring in ${projectPath}...`);
 
 		let buildDir: string | null = extractBuildPath(profile.cmakeOptions);
 
@@ -79,7 +84,7 @@ export async function runCMakeSyncCommand(projectPath: string) {
 			cwd: projectPath,
 			env: {
 				...process.env,
-				...(profile.environment ?? {}),
+				...(profile.environment || {}),
 				PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
 			}
 		};
@@ -90,37 +95,38 @@ export async function runCMakeSyncCommand(projectPath: string) {
 			return;
 		}
 
-		output.appendLine(`creating V1 Query files in build directory: ${buildPath}`);
-		output.appendLine(`executed cmake command: ${cmakeCmd}`);
+
+		syncTerminal.writeInfo(`creating V1 Query files in build directory: ${buildPath}`);
+		syncTerminal.writeInfo(`executed cmake command: ${cmakeCmd}`);
 
 		createCodeModelV1Query(buildPath);
 		const child = cp.exec(cmakeCmd, options);
 
 		if (!child) {
-			output.appendLine('[Error] Failed to start CMake process.');
+			syncTerminal.writeError('Failed to start CMake process.');
 			reject(new Error("[Error] Failed to start CMake process."));
 			return;
 		}
 
 		child.stdout?.on('data', (data: Buffer) => {
-			output.append(data.toString());
+			syncTerminal.write(`${data.toString()}`);
 		});
 
 		child.stderr?.on('data', (data: Buffer) => {
-			output.append(data.toString());
+			syncTerminal.writeError(data.toString());
 		});
 
 		child.on('close', (code: number | null) => {
 			if (code !== 0) {
-				output.appendLine(`[Error] CMake exited with code ${code}`);
+				syncTerminal.writeError(`CMake exited with code ${code}`);
 			} else {
-				output.appendLine('[Info] CMake finished successfully.');
+				syncTerminal.writeSuccess('CMake finished successfully.');
 				if(!buildPath) {
 					vscode.window.showErrorMessage("Build path undefined.");
 					reject(new Error("Build path undefined."));
 					return;
 				}
-				output.appendLine("parse file API");
+				syncTerminal.writeInfo("parse file API");
 				parseCMakeFileApiReply(buildPath);
 				getCMakeCompilerInfo(buildPath);
 				resolve();
@@ -130,10 +136,14 @@ export async function runCMakeSyncCommand(projectPath: string) {
 }
 
 export async function runCMakeTargetBuild(projectPath: string, buildDirPath: string, targetName: string) {
-	return new Promise((resolve) => {
-		const output = vscode.window.createOutputChannel('CMake Build');
-		output.clear();
-		output.show(true);
+	return new Promise<void>((resolve, reject) => {
+		if(!terminalMrg) {
+			reject(new Error("Failed to inicialize terminals."));
+			return;
+		}
+		const terminal = terminalMrg.getBuildTerminal();
+		terminal.clear();
+		terminal.show(true);
 
 		const config = vscode.workspace.getConfiguration('cmaketoolchains');
 		setProfiles(config.get('cmakeProfiles') || []);
@@ -141,14 +151,16 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 		const cmakeSelectedProfile = vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSelectedProfile');
 		const profile = profiles.find(p => p.name === cmakeSelectedProfile);
 		if (!profile) {
-			throw new Error("Selected profile not found.");
+			reject(new Error("Selected profile not found."));
+			return;
 		}
 
 		setToolchains(config.get('cmakeToolchains') || []);
 		const toolchain = toolchains.find(tc => tc.name === profile.toolchain);
 
 		if (!toolchain) {
-			throw new Error("Toolchain not found set by the current selected cmake profile.");
+			reject(new Error("Toolchain not found set by the current selected cmake profile."));
+			return;
 		}
 
 		setRunConfigs(parseLaunchConfig());
@@ -172,34 +184,37 @@ export async function runCMakeTargetBuild(projectPath: string, buildDirPath: str
 			cwd: projectPath,
 			env: {
 				...process.env,
-				...(profile.environment ?? {}),
+				...(profile.environment || {}),
 				PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
 			}
 		};
 
-		output.appendLine(`[CMake] build command: ${cmakeCmd}`);
+		terminal.writeInfo(`[CMake] build command: ${cmakeCmd}`);
 		const child = cp.exec(cmakeCmd, options);
 
 		if (!child) {
-			output.appendLine('[Error] Failed to start CMake process.');
+			terminal.writeError('Failed to start CMake process.');
+			reject(new Error("[Error] Failed to start CMake process."));
 			return;
 		}
 
 		child.stdout?.on('data', (data: Buffer) => {
-			output.append(data.toString());
+			terminal.write(data.toString());
 		});
 
 		child.stderr?.on('data', (data: Buffer) => {
-			output.append(data.toString());
+			terminal.writeError(data.toString());
 		});
 
 		child.on('close', (code: number | null) => {
 			if (code !== 0) {
-				output.appendLine(`[Error] CMake exited with code ${code}`);
-				resolve(false);
+				terminal.writeError(`CMake exited with code ${code}`);
+				if(vscode.workspace.getConfiguration().get('cmaketoolchains.allowRunOnFailedBuilds')) {
+					resolve();
+				}
 			} else {
-				output.appendLine('[Info] CMake finished successfully.');
-				resolve(true);
+				terminal.writeSuccess('CMake finished successfully.');
+				resolve();
 			}
 		});
 	});
@@ -351,8 +366,8 @@ async function findIndexFile(replyDir: string): Promise<string | null> {
 function getCMakeCompilerInfo(buildDir: string) {
 	const cacheFilePath = path.join(buildDir, 'CMakeCache.txt');
 	const cache = fs.readFileSync(cacheFilePath, 'utf-8');
-	const compilerId = cache.match(/^CMAKE_CXX_COMPILER_ID:INTERNAL=(.*)$/m)?.[1] ?? undefined;
-	const compilerPath = cache.match(/^CMAKE_CXX_COMPILER:FILEPATH=(.*)$/m)?.[1] ?? undefined;
+	const compilerId = cache.match(/^CMAKE_CXX_COMPILER_ID:INTERNAL=(.*)$/m)?.[1] || undefined;
+	const compilerPath = cache.match(/^CMAKE_CXX_COMPILER:FILEPATH=(.*)$/m)?.[1] || undefined;
 	setBuildToolEnv({
 		compilerId: compilerId, 
 		compilerPath: compilerPath
@@ -388,7 +403,8 @@ export function buildSetupCommands(cfg?: DebugSetupCommand, isGdb: boolean = tru
       cmds.push({
          text: isGdb
             ? "interpreter-exec console \"set disable-randomization on\""
-            : "settings set target.disable-aslr true"
+            : "settings set target.disable-aslr true",
+			ignoreFailures: true
       });
    }
 
@@ -396,5 +412,8 @@ export function buildSetupCommands(cfg?: DebugSetupCommand, isGdb: boolean = tru
       cmds.push(...cfg.rawCommands);
    }
 
+	console.log(cmds);
+
    return cmds;
 }
+

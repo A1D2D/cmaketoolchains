@@ -15,6 +15,7 @@ config:
 //cmakeSelectedProfile
 //cmakeSelectedTarget
 //cmakeSyncOnBuild
+//allowRunOnFailedBuilds
 
 //cmakeActiveBuildDirectory
 

@@ -1,5 +1,6 @@
 import path from 'path';
 import * as vscode from 'vscode';
+import { PsudoTerminalManager } from './cmakeTools/terminalManager';
 
 interface Profile {
    name: string; // Profile name (e.g., Debug)
@@ -22,6 +23,18 @@ interface Toolchain {
    debugger?: string;
 }
 
+interface RunDebugConfig {
+   name: string; // Name of the config
+   target: string; //Target
+   executable: string; //Executeable to run
+   programArgs?: string[]; //Program arguments
+   setupCommands?: DebugSetupCommand; //setup commands
+   workDir?: string; // Execution directory path
+   environment?: { [key: string]: string }; // Additional environment variables for the build
+   runAdmin: boolean; //Enables Elevated privliges
+   runExternal: boolean; //Run in a external console if possible
+}
+
 interface BuildTargets {
    name: string;
    artifacts: string[] | null;
@@ -40,16 +53,10 @@ interface DebugSetupCommand {
    rawCommands?: RawGdbCommand[];
 }
 
-interface RunDebugConfig {
-   name: string;
-   target: string;
-   executable: string;
-   programArgs?: string[];
-   setupCommands?: DebugSetupCommand;
-   workDir?: string;
-   environment?: { [key: string]: string };
-   runAdmin: boolean;
-   runExternal: boolean;
+interface RunInstance {
+   id: number;
+   running: boolean;
+   execution?: vscode.TaskExecution;
 }
 
 interface BuildToolEnv {
@@ -74,6 +81,10 @@ export let avaliableTargets: BuildTargets[] | null = null;
 export let context: vscode.ExtensionContext | null = null;
 
 export let isCmakeProject: boolean = false; 
+
+export let terminalMrg: PsudoTerminalManager | null = null;
+
+export let runInstances = new Map<string, RunInstance[]>();
 
 export function setToolchains(newToolchains: Toolchain[]) {
    toolchains = newToolchains; // Set new toolchains
@@ -107,6 +118,14 @@ export function setIsCMakeProject(newIsCmakeProject: boolean) {
    isCmakeProject = newIsCmakeProject;
 }
 
+export function setTerminalMannager(newTerminalMrg: PsudoTerminalManager) {
+   terminalMrg = newTerminalMrg;
+}
+
+export function setRunInstances(newRunInstances: Map<string, RunInstance[]>) {
+   runInstances = newRunInstances;
+}
+
 export function getToolchains() {
    return toolchains;
 }
@@ -127,6 +146,14 @@ export function getIsCMakeProject() {
    return isCmakeProject;
 }
 
+export function getTerminalManager() {
+   return terminalMrg;
+}
+
+export function getRunInstances() {
+   return runInstances;
+}
+
 export function initProjectFolder() {
    const workspaceFolders = vscode.workspace.workspaceFolders;
    if (!workspaceFolders) {
@@ -144,4 +171,4 @@ export function resolvePath(p: string): string | null {
    return path.isAbsolute(p) ? p : path.join(projectPath, p);
 }
 
-export { BuildTargets, RawGdbCommand, DebugSetupCommand, RunDebugConfig, BuildToolEnv, Toolchain, Profile};
+export { BuildTargets, RawGdbCommand, DebugSetupCommand, RunDebugConfig, BuildToolEnv, Toolchain, Profile, RunInstance, PsudoTerminalManager};

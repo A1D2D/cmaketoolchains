@@ -2,10 +2,10 @@
   "name": "cmaketoolchains",
   "displayName": "CMakeToolchains",
   "description": "",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "publisher": "a1d2d",
   "engines": {
-    "vscode": "^1.70.0"
+    "vscode": "^1.87.0"
   },
   "categories": [
     "Other"
@@ -16,7 +16,22 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "taskDefinitions": [
+      {
+        "type": "cmaketoolchains-run",
+        "properties": {
+          "instanceId": {
+            "type": "string"
+          }
+        }
+      }
+    ],
     "commands": [
+      {
+        "command": "cmaketoolchains.createProject",
+        "title": "Create new CMake Project",
+        "category": "CMake Toolchains"
+      },
       {
         "command": "cmaketoolchains.selectProfile",
         "title": "Select Profile",
@@ -134,6 +149,18 @@
           "type": "boolean",
           "default": true,
           "description": "configure cmake project on every build"
+        },
+        "cmaketoolchains.templatePaths": {
+          "type": "array",
+          "description": "List of paths to templates",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cmaketoolchains.allowRunOnFailedBuilds": {
+          "type": "boolean",
+          "default": false,
+          "description": "allows run of already built binaries with or without a debugger, even if the new build failed"
         },
         "cmaketoolchains.cmakeToolchains": {
           "type": "array",
@@ -323,7 +350,9 @@
                     "description": "Advanced: raw debugger commands (GDB/LLDB only)",
                     "items": {
                       "type": "object",
-                      "required": ["text"],
+                      "required": [
+                        "text"
+                      ],
                       "properties": {
                         "text": {
                           "type": "string",
@@ -387,14 +416,15 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "^24.0.15",
-    "@types/vscode": "1.70",
+    "@types/node": "^24.13.3",
+    "@types/vscode": "^1.87.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.25.3",
     "eslint": "^9.25.1",
+    "mocha": "^11.3.0",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.8.3"
   },

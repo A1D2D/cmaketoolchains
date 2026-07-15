@@ -12,10 +12,17 @@ export function registerBuildTargetCommand(context: vscode.ExtensionContext) {
          return;
       }
       if(vscode.workspace.getConfiguration().get('cmaketoolchains.cmakeSyncOnBuild')) {
-         await runCMakeSyncCommand(projectPath);
+         try {
+            await runCMakeSyncCommand(projectPath);
+         } catch (error) {
+            vscode.window.showErrorMessage(`${error}`);
+         }
       }
-      await runCMakeTargetBuild(projectPath, buildPath, selectedTargetName);
-      // vscode.window.showInformationMessage('target Build: in progress');
+      try {
+         await runCMakeTargetBuild(projectPath, buildPath, selectedTargetName);
+      } catch (error) {
+         vscode.window.showErrorMessage(`${error}`);
+      }
    });
    context.subscriptions.push(cmd);
 }

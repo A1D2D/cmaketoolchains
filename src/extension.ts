@@ -13,8 +13,10 @@ import {
 	registerDebugTargetCommand,
 	registerCompileCommandsCommand
 } from './commands';
-import { initProjectFolder, setContext } from './globals';
+import { initProjectFolder, PsudoTerminalManager, setContext, setTerminalMannager, terminalMrg } from './globals';
 import { isCMakeProject, updateContext } from './cmakeTools/utilities';
+import { onTaskEnded } from './cmakeTools/runDebug';
+import { registerCreateProjectCommand } from './commands/createProjectCmd';
 
 export async function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "cmaketoolchains" is now active!');
@@ -24,6 +26,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	initProjectFolder();
 
 	setContext(context);
+
+	const terminalMrg = new PsudoTerminalManager();
+	terminalMrg.init(context);
+	setTerminalMannager(terminalMrg);
 
 	registerSelectProfileCommand(context);
 	registerSelectTargetCommand(context);
@@ -36,12 +42,26 @@ export async function activate(context: vscode.ExtensionContext) {
 	registerConfigureProfilesCommand(context);
 	registerConfigureTargetsCommand(context);
 	registerCompileCommandsCommand(context);
+	registerCreateProjectCommand(context);
 
 	context.subscriptions.push(
 		vscode.workspace.onDidCreateFiles(updateContext),
 		vscode.workspace.onDidDeleteFiles(updateContext),
 		vscode.workspace.onDidRenameFiles(updateContext),
-		vscode.workspace.onDidChangeWorkspaceFolders(updateContext)
+		vscode.workspace.onDidChangeWorkspaceFolders(updateContext),
+		vscode.tasks.onDidEndTaskProcess(onTaskEnded),
+	);
+
+	context.subscriptions.push(
+		vscode.tasks.registerTaskProvider("cmaketoolchains-run", {
+			provideTasks() {
+				return [];
+			},
+
+			resolveTask(task) {
+				return task;
+			}
+		})
 	);
 
 	if(await isCMakeProject()) {

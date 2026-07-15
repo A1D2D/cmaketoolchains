@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 export function registerConfigureSettingsCommand(context: vscode.ExtensionContext) {
    const cmd = vscode.commands.registerCommand('cmaketoolchains.configureSettings', async () => {
-      const options = ['configure cmake: toolchains', 'configure cmake: profiles', 'configure cmake: targets'];
+      const options = ['configure cmake: toolchains', 'configure cmake: profiles', 'configure cmake: targets', 'create new project'];
       const selected = await vscode.window.showQuickPick(options, {
 			placeHolder: 'Configure Cmake'
 		});
@@ -15,6 +15,9 @@ export function registerConfigureSettingsCommand(context: vscode.ExtensionContex
 				break;
 			case 'configure cmake: targets':
 				vscode.commands.executeCommand('cmaketoolchains.configureTargets');
+				break;
+			case 'create new project':
+				vscode.commands.executeCommand('cmaketoolchains.createProject');
 				break;
 			default:
 				break;

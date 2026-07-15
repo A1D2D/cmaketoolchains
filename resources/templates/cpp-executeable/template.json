@@ -1,0 +1,27 @@
+{
+   "name": "C++ Executable",
+   "variables": [
+      {
+         "name": "CVerison",
+         "type": "select",
+         "options": [
+            "23", "17", "11", "99", "90"
+         ]
+      },
+      {
+         "name": "CppVerison",
+         "type": "select",
+         "options": [
+            "26", "23", "20", "17", "14", "11", "03", "98"
+         ]
+      },
+      {
+         "name": "ToolChain",
+         "type": "toolchain"
+      },
+      {
+         "name": "ProjectName",
+         "type": "project-name"
+      }
+   ]
+}

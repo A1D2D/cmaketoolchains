@@ -9,7 +9,12 @@ export function registerSyncCMakeCommand(context: vscode.ExtensionContext) {
 			return;
 		}
 
-      runCMakeSyncCommand(projectPath);
+      try {
+         await runCMakeSyncCommand(projectPath);
+      } catch (error) {
+         vscode.window.showErrorMessage(`${error}`);
+      }
+      
       if(buildPath) {
          updateCompileCommands(buildPath);
       }

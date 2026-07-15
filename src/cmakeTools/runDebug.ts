@@ -1,107 +1,10 @@
 import * as vscode from 'vscode';
-import { avaliableTargets, buildToolEnv, BuildToolEnv, Profile, profiles, projectPath, runConfigs, RawGdbCommand, DebugSetupCommand, RunDebugConfig, setProfiles, setRunConfigs, setToolchains, Toolchain, toolchains } from '../globals';
+import { avaliableTargets, buildToolEnv, BuildToolEnv, Profile, profiles, runConfigs, RunDebugConfig, setProfiles, setRunConfigs, setToolchains, Toolchain, toolchains, RunInstance, getRunInstances } from '../globals';
 import * as path from 'path';
-import * as fs from 'fs';
 import * as cp from 'child_process';
 
-import * as jsonc from 'jsonc-parser';
 import { buildSetupCommands } from './utilities';
-
-export function parseLaunchConfig(): RunDebugConfig[] {
-   if (!projectPath) {
-      vscode.window.showErrorMessage('Project path invalid.');
-      return [];
-   }
-
-   const launchFilePath = path.join(projectPath, '.vscode', 'launch.json');
-   if (!fs.existsSync(launchFilePath)) {
-      return [];
-   }
-
-   const raw = fs.readFileSync(launchFilePath, 'utf8');
-   const json: any = jsonc.parse(raw);
-   const configurations = json?.configurations;
-   if (!Array.isArray(configurations)) {
-      return [];
-   }
-
-   const configs: RunDebugConfig[] = [];
-
-   for (const entry of configurations) {
-      if (entry?.type !== 'cmake-toolchains' || entry?.request !== 'launch') {
-         continue;
-      }
-      if (!entry.name || !entry.target || !entry.executable) {
-         continue;
-      }
-
-      const config: RunDebugConfig = {
-         name: entry.name,
-         target: entry.target,
-         executable: entry.executable,
-         programArgs: entry.programArgs ?? undefined,
-         setupCommands: entry.setupCommands ?? {prettyPrinting: true},
-         workDir: entry.workDir ?? undefined,
-         environment: entry.environment ?? undefined,
-         runAdmin: entry.runAdmin ?? false,
-         runExternal: entry.runExternal ?? false,
-      };
-
-      configs.push(config);
-   }
-
-   return configs;
-}
-
-export async function saveLaunchConfig(newConfig: RunDebugConfig) {
-   if (!projectPath) {
-      vscode.window.showErrorMessage('Project path invalid.');
-      return;
-   }
-
-   const launchFilePath = path.join(projectPath, '.vscode', 'launch.json');
-   let raw = '';
-   try {
-      raw = fs.readFileSync(launchFilePath, 'utf8');
-   } catch {
-      raw = `{\n  "version": "0.2.0",\n  "configurations": []\n}`;
-   }
-
-   const newEntry = {
-      type: 'cmake-toolchains',
-      request: 'launch',
-      name: newConfig.name,
-      target: newConfig.target,
-      executable: newConfig.executable,
-      programArgs: newConfig.programArgs,
-      setupCommands: newConfig.setupCommands ?? {prettyPrinting: true},
-      workDir: newConfig.workDir,
-      environment: newConfig.environment,
-      runAdmin: newConfig.runAdmin ?? false,
-      runExternal: newConfig.runExternal ?? false,
-   };
-
-   const edits = jsonc.modify(
-      raw,
-      ['configurations'],
-      (prev: any[]) => {
-         const idx = prev.findIndex(c => c.name === newConfig.name && c.type === 'cmake-toolchains');
-         if (idx >= 0) {
-            prev[idx] = newEntry; // Update
-         } else {
-            prev.push(newEntry); // Add
-         }
-         return prev;
-      },
-      { formattingOptions: { insertSpaces: true, tabSize: 2 } }
-   );
-
-   const updated = jsonc.applyEdits(raw, edits);
-   fs.mkdirSync(path.dirname(launchFilePath), { recursive: true });
-   fs.writeFileSync(launchFilePath, updated, 'utf-8');
-
-   // vscode.window.showInformationMessage(`Saved config "${newConfig.name}" to launch.json`);
-}
+import { parseLaunchConfig } from './launchConfigManager';
 
 export async function runSelectedTarget(selectedTarget: string) {
    const target = avaliableTargets?.find(t => t.name === selectedTarget);
@@ -135,7 +38,7 @@ export async function runSelectedTarget(selectedTarget: string) {
       target: `${selectedTarget}`,
       executable: `${selectedTarget}`,
       programArgs: [],
-      setupCommands: {prettyPrinting: true},
+      setupCommands: { prettyPrinting: true },
       workDir: `${path.dirname(exePath)}`,
       runAdmin: false,
       runExternal: false
@@ -144,17 +47,17 @@ export async function runSelectedTarget(selectedTarget: string) {
    const targetConfig: RunDebugConfig = runConfigs.find(cfg => cfg.executable === selectedTarget) || defaults;
 
    const sConfig: RunDebugConfig = {
-      name: targetConfig.name ?? defaults.name,
-      target: targetConfig.target ?? defaults.target,
-      executable: targetConfig.executable ?? defaults.executable,
-      programArgs: targetConfig.programArgs ?? defaults.programArgs,
-      setupCommands: targetConfig.setupCommands ?? defaults.setupCommands,
-      workDir: targetConfig.workDir ?? defaults.workDir,
-      runAdmin: targetConfig.runAdmin ?? defaults.runAdmin,
-      runExternal: targetConfig.runExternal ?? defaults.runExternal,
+      name: targetConfig.name || defaults.name,
+      target: targetConfig.target || defaults.target,
+      executable: targetConfig.executable || defaults.executable,
+      programArgs: targetConfig.programArgs || defaults.programArgs,
+      setupCommands: targetConfig.setupCommands || defaults.setupCommands,
+      workDir: targetConfig.workDir || defaults.workDir,
+      runAdmin: targetConfig.runAdmin || defaults.runAdmin,
+      runExternal: targetConfig.runExternal || defaults.runExternal,
    };
 
-   if(sConfig.runExternal) {
+   if (sConfig.runExternal) {
       runInExternalConsole(exePath, sConfig, profile, toolchain);
    } else {
       runInVsCode(exePath, sConfig, profile, toolchain);
@@ -193,7 +96,7 @@ export async function debugSelectedTarget(selectedTarget: string) {
       target: `${selectedTarget}`,
       executable: `${selectedTarget}`,
       programArgs: [],
-      setupCommands: {prettyPrinting: true},
+      setupCommands: { prettyPrinting: true },
       workDir: `${path.dirname(exePath)}`,
       runAdmin: false,
       runExternal: false
@@ -202,17 +105,17 @@ export async function debugSelectedTarget(selectedTarget: string) {
    const targetConfig: RunDebugConfig = runConfigs.find(cfg => cfg.executable === selectedTarget) || defaults;
 
    const sConfig: RunDebugConfig = {
-      name: targetConfig.name ?? defaults.name,
-      target: targetConfig.target ?? defaults.target,
-      executable: targetConfig.executable ?? defaults.executable,
-      programArgs: targetConfig.programArgs ?? defaults.programArgs,
-      setupCommands: targetConfig.setupCommands ?? defaults.setupCommands,
-      workDir: targetConfig.workDir ?? defaults.workDir,
-      runAdmin: targetConfig.runAdmin ?? defaults.runAdmin,
-      runExternal: targetConfig.runExternal ?? defaults.runExternal,
+      name: targetConfig.name || defaults.name,
+      target: targetConfig.target || defaults.target,
+      executable: targetConfig.executable || defaults.executable,
+      programArgs: targetConfig.programArgs || defaults.programArgs,
+      setupCommands: targetConfig.setupCommands || defaults.setupCommands,
+      workDir: targetConfig.workDir || defaults.workDir,
+      runAdmin: targetConfig.runAdmin || defaults.runAdmin,
+      runExternal: targetConfig.runExternal || defaults.runExternal,
    };
 
-   debugSomewhere(exePath, sConfig, profile, toolchain, buildToolEnv || {compilerId: '', compilerPath:''});
+   debugSomewhere(exePath, sConfig, profile, toolchain, buildToolEnv || { compilerId: '', compilerPath: '' });
 }
 
 function runInExternalConsole(exePath: string, config: RunDebugConfig, profile: Profile, toolchain: Toolchain) {
@@ -222,58 +125,118 @@ function runInExternalConsole(exePath: string, config: RunDebugConfig, profile: 
       return;
    }
 
-   if(config.runAdmin) {
+   if (config.runAdmin) {
       vscode.window.showWarningMessage("Please run VSCode as an administrator. The 'runAdmin' flag is not supported and should be ignored if VSCode is already running with elevated privileges.");
    }
 
-   const args = config.programArgs?.join(' ') ?? '';
+   const args = config.programArgs?.join(' ') || '';
    const fullCommand = `"${exePath}" ${args}`;
-   const workDir = config.workDir ?? path.dirname(exePath);
+   const workDir = config.workDir || path.dirname(exePath);
 
    cp.exec(`cmd.exe /c start cmd.exe /k ${fullCommand}`, {
       cwd: config.workDir,
       env: {
          ...process.env,
-         ...(profile.environment ?? {}),
-         ...(config.environment ?? {}),
+         ...(profile.environment || {}),
+         ...(config.environment || {}),
          PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
       },
    }).unref();
 }
 
-function runInVsCode(exePath: string, config: RunDebugConfig, profile: Profile, toolchain: Toolchain) {
-   const cmd = `"${exePath}" ${config.programArgs?.join(' ')}`;
+function getInstance(name: string): RunInstance {
+   let instances = getRunInstances().get(name);
 
-   if(config.runAdmin) {
-      vscode.window.showWarningMessage("Please run VSCode as an administrator. The 'runAdmin' flag is not supported and should be ignored if VSCode is already running with elevated privileges.");
+   if (!instances) {
+      instances = [];
+      getRunInstances().set(name, instances);
    }
 
-   const terminal = vscode.window.createTerminal({
-      name: `Run ${config.name}`,
-      cwd: config.workDir,
-      hideFromUser: false,
-      env: {
-         ...process.env,
-         ...(profile.environment ?? {}),
-         ...(config.environment ?? {}),
-         PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
-      }
-   });
+   let instance = instances.find(x => !x.running);
 
-   terminal.show(true);
-   
-   terminal.sendText(cmd);
+   if (!instance) {
+      instance = {
+         id: instances.length + 1,
+         running: false
+      };
+
+      instances.push(instance);
+   }
+
+   instance.running = true;
+
+   return instance;
+}
+
+export async function onTaskEnded(e: vscode.TaskProcessEndEvent) {
+   for (const instances of getRunInstances().values()) {
+      for (const instance of instances) {
+         if (instance.execution === e.execution) {
+            instance.running = false;
+            instance.execution = undefined;
+            return;
+         }
+      }
+   }
+}
+
+function getDisplayName(name: string, id: number) {
+   return id === 1 ? name : `${name} #${id}`;
+}
+
+async function runInVsCode(exePath: string, config: RunDebugConfig, profile: Profile, toolchain: Toolchain) {
+   if (config.runAdmin) {
+      vscode.window.showWarningMessage(
+         "Please run VSCode as an administrator. The 'runAdmin' flag is not supported and should be ignored if VSCode is already running with elevated privileges."
+      );
+   }
+
+   const instance = getInstance(config.name);
+
+   const task = new vscode.Task(
+      {
+         type: "cmaketoolchains-run",
+         instanceId: `id-${config.name}-${instance.id}`
+      },
+      vscode.TaskScope.Workspace,
+      `Run ${getDisplayName(config.name, instance.id)}`,
+      "cmaketoolchains"
+   );
+
+   task.execution = new vscode.ProcessExecution(
+      exePath,
+      config.programArgs || [],
+      {
+         cwd: config.workDir,
+         env: {
+            ...process.env,
+            ...(profile.environment || {}),
+            ...(config.environment || {}),
+            PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+         }
+      }
+   );
+
+   task.presentationOptions = {
+      clear: true,
+      panel: vscode.TaskPanelKind.Shared
+   };
+
+   const execution = await vscode.tasks.executeTask(task);
+
+   instance.running = true;
+   instance.execution = execution;
 }
 
 async function debugSomewhere(exePath: string, config: RunDebugConfig, profile: Profile, toolchain: Toolchain, buildToolEnv: BuildToolEnv) {
-   if(config.runAdmin) {
+   if (config.runAdmin) {
       vscode.window.showWarningMessage("Please run VSCode as an administrator. The 'runAdmin' flag is not supported and should be ignored if VSCode is already running with elevated privileges.");
    }
 
    const mergedEnv = {
       ...process.env,
-      ...(profile.environment ?? {}),
-      ...(config.environment ?? {}),
+      ...(profile.environment || {}),
+      ...(config.environment || {}),
       PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
    };
 

@@ -1,0 +1,25 @@
+{
+   "cmaketoolchains.cmakeProfiles": [
+      {
+         "name": "{{{ToolChain}}}-Debug",
+         "buildType": "Debug",
+         "toolchain": "{{{ToolChain}}}",
+         "generator": "",
+         "buildDirectory": ""
+      }
+   ],
+   "cmaketoolchains.compileCommandTargets": [
+      {
+         "extension": "ms-vscode.cpptools",
+         "configSection": "C_Cpp",
+         "configKey": "default.compileCommands",
+         "enabled": true
+      },
+      {
+         "extension": "llvm-vs-code-extensions.vscode-clangd",
+         "configSection": "clangd",
+         "configKey": "arguments",
+         "enabled": true
+      }
+   ]
+}
