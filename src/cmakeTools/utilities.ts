@@ -49,7 +49,7 @@ export async function runCMakeSyncCommand(projectPath: string) {
 			buildDir = profile.buildDirectory ? profile.buildDirectory : (profile.buildType ? `build-${profile.buildType.toLowerCase()}` : 'build');
 		}
 
-		setBuildPath(resolvePath(buildDir));
+		setBuildPath((buildDir));
 
 		const cmakeExecutable = toolchain.cmake || 'cmake';
 
@@ -129,6 +129,7 @@ export async function runCMakeSyncCommand(projectPath: string) {
 				syncTerminal.writeInfo("parse file API");
 				parseCMakeFileApiReply(buildPath);
 				getCMakeCompilerInfo(buildPath);
+				vscode.window.showInformationMessage("Succesful api reply parse");
 				resolve();
 			}
 		});
@@ -250,7 +251,7 @@ function detectGeneratorFromBuildTool(buildToolPathOrName: string) {
 }
 
 function createCodeModelV1Query(buildDir: string) {
-	const queryDir = path.join(buildDir, '.cmake', 'api', 'v1', 'query');
+	const queryDir = path.join(resolvePath(buildDir) || '', '.cmake', 'api', 'v1', 'query');
 
 	fs.mkdirSync(queryDir, { recursive: true });
 
@@ -294,7 +295,7 @@ function extractBuildPath(options: string[] | undefined): string | null {
 }
 
 async function parseCMakeFileApiReply(buildDir: string) {
-	const replyDir = path.join(buildDir, '.cmake', 'api', 'v1', 'reply');
+	const replyDir = path.join(resolvePath(buildDir) || '', '.cmake', 'api', 'v1', 'reply');
 	let file: string | null = await findIndexFile(replyDir);
 	if (!file) {
 		vscode.window.showErrorMessage('CMake File API index file not found');
@@ -364,7 +365,11 @@ async function findIndexFile(replyDir: string): Promise<string | null> {
 }
 
 function getCMakeCompilerInfo(buildDir: string) {
-	const cacheFilePath = path.join(buildDir, 'CMakeCache.txt');
+	const cacheFilePath = path.join(resolvePath(buildDir) || '', 'CMakeCache.txt');
+	if (!fs.existsSync(cacheFilePath)) {
+		vscode.window.showErrorMessage('CMake File API index file not found');
+		return;
+	}
 	const cache = fs.readFileSync(cacheFilePath, 'utf-8');
 	const compilerId = cache.match(/^CMAKE_CXX_COMPILER_ID:INTERNAL=(.*)$/m)?.[1] || undefined;
 	const compilerPath = cache.match(/^CMAKE_CXX_COMPILER:FILEPATH=(.*)$/m)?.[1] || undefined;

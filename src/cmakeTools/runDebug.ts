@@ -203,6 +203,8 @@ async function runInVsCode(exePath: string, config: RunDebugConfig, profile: Pro
       "cmaketoolchains"
    );
 
+   const pathSeparator = process.platform === 'win32' ? ';' : ':';
+
    task.execution = new vscode.ProcessExecution(
       exePath,
       config.programArgs || [],
@@ -212,7 +214,11 @@ async function runInVsCode(exePath: string, config: RunDebugConfig, profile: Pro
             ...process.env,
             ...(profile.environment || {}),
             ...(config.environment || {}),
-            PATH: `${toolchain.toolsetFolder}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`
+            PATH: [
+               toolchain.toolsetFolder,
+               process.env.PATH,
+               path.dirname(exePath)
+            ].join(pathSeparator)
          }
       }
    );
